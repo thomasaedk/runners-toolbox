@@ -1,11 +1,26 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 
 function GpxCompareTool() {
   const [files, setFiles] = useState({ file1: null, file2: null })
   const [resultImage, setResultImage] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [dragActive, setDragActive] = useState({ file1: false, file2: false })
   const { t } = useTranslation()
+  const resultRef = useRef(null)
+
+  // Scroll to result when image is loaded
+  useEffect(() => {
+    if (resultImage && resultRef.current) {
+      setTimeout(() => {
+        resultRef.current.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'start',
+          inline: 'nearest'
+        })
+      }, 100) // Small delay to ensure image is rendered
+    }
+  }, [resultImage])
 
   const handleFileChange = (fileNumber, event) => {
     const file = event.target.files[0]
@@ -18,16 +33,56 @@ function GpxCompareTool() {
 
   const handleDrop = (fileNumber, event) => {
     event.preventDefault()
+    event.stopPropagation()
+    
+    console.log('Drop event for', fileNumber, event.dataTransfer.files)
+    
+    // Reset drag active state
+    setDragActive(prev => ({ ...prev, [fileNumber]: false }))
+    
+    // Check if there are files in the drop event
+    if (!event.dataTransfer.files || event.dataTransfer.files.length === 0) {
+      console.log('No files in drop event')
+      return // No files dropped, do nothing
+    }
+    
     const file = event.dataTransfer.files[0]
-    if (file && file.name.endsWith('.gpx')) {
+    console.log('File dropped:', file.name, file.type)
+    
+    // Check both file extension and MIME type
+    const isValidGpx = (file.name && file.name.endsWith('.gpx')) || 
+                       file.type === 'application/gpx+xml' ||
+                       file.type === 'application/gpx' ||
+                       file.type === 'text/xml'
+    
+    if (file && isValidGpx) {
+      console.log('Valid GPX file, setting', fileNumber)
       setFiles(prev => ({ ...prev, [fileNumber]: file }))
     } else {
+      console.log('Invalid file type. Name:', file.name, 'Type:', file.type)
       alert(t('gpxCompare.errors.onlyGpxFilesDrop'))
     }
   }
 
   const handleDragOver = (event) => {
     event.preventDefault()
+    event.stopPropagation()
+    // Must set dropEffect for drop to work
+    event.dataTransfer.dropEffect = 'copy'
+  }
+
+  const handleDragEnter = (fileNumber, event) => {
+    event.preventDefault()
+    event.stopPropagation()
+    console.log('Drag enter', fileNumber)
+    setDragActive(prev => ({ ...prev, [fileNumber]: true }))
+  }
+
+  const handleDragLeave = (fileNumber, event) => {
+    event.preventDefault()
+    event.stopPropagation()
+    console.log('Drag leave', fileNumber)
+    setDragActive(prev => ({ ...prev, [fileNumber]: false }))
   }
 
   const handleCompare = async () => {
@@ -84,9 +139,11 @@ function GpxCompareTool() {
         <div>
           <h3>{t('gpxCompare.firstFile')}</h3>
           <div 
-            className="file-upload-area"
+            className={`file-upload-area ${dragActive.file1 ? 'drag-active' : ''}`}
             onDrop={(e) => handleDrop('file1', e)}
             onDragOver={handleDragOver}
+            onDragEnter={(e) => handleDragEnter('file1', e)}
+            onDragLeave={(e) => handleDragLeave('file1', e)}
           >
             <input
               type="file"
@@ -112,9 +169,11 @@ function GpxCompareTool() {
         <div>
           <h3>{t('gpxCompare.secondFile')}</h3>
           <div 
-            className="file-upload-area"
+            className={`file-upload-area ${dragActive.file2 ? 'drag-active' : ''}`}
             onDrop={(e) => handleDrop('file2', e)}
             onDragOver={handleDragOver}
+            onDragEnter={(e) => handleDragEnter('file2', e)}
+            onDragLeave={(e) => handleDragLeave('file2', e)}
           >
             <input
               type="file"
@@ -153,7 +212,7 @@ function GpxCompareTool() {
       </div>
 
       {resultImage && (
-        <div>
+        <div ref={resultRef}>
           <h3>{t('gpxCompare.comparisonResult')}</h3>
           <img src={resultImage} alt="GPX Comparison" className="result-image" />
         </div>

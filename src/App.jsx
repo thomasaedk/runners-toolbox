@@ -16,14 +16,10 @@ function App() {
 
   return (
     <div className="app">
+      <LanguageSwitcher />
       <header className="app-header">
-        <div className="header-content">
-          <div className="title-section">
-            <h1>{t('title')}</h1>
-            <p>{t('subtitle')}</p>
-          </div>
-          <LanguageSwitcher />
-        </div>
+        <h1>{t('title')}</h1>
+        <p>{t('subtitle')}</p>
       </header>
 
       <nav className="tabs">
