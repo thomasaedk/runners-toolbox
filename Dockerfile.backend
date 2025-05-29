@@ -6,6 +6,9 @@ WORKDIR /app
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     curl \
+    libexpat1-dev \
+    libxml2-dev \
+    libxslt1-dev \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 

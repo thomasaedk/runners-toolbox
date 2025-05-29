@@ -4,18 +4,21 @@ GPX file processor for comparing two running routes.
 This is a placeholder implementation that creates a simple comparison visualization.
 """
 
-import sys
-import os
-
 # Set matplotlib backend before importing pyplot (for headless operation)
 import matplotlib
+import os
+import sys
+
 matplotlib.use('Agg')
 
 import gpxpy
 import matplotlib.pyplot as plt
-import matplotlib.patches as patches
 import numpy as np
 from datetime import datetime
+import contextily as ctx
+import geopandas as gpd
+from shapely.geometry import LineString, Point
+import pandas as pd
 
 def parse_gpx_file(file_path):
     """Parse a GPX file and extract track points."""
@@ -36,44 +39,56 @@ def parse_gpx_file(file_path):
     return points
 
 def create_comparison_plot(points1, points2, output_path):
-    """Create a comparison visualization of two GPX tracks."""
-    fig, ax = plt.subplots(figsize=(12, 8))
-    
+    """Create a comparison visualization of two GPX tracks on satellite imagery."""
     # Extract coordinates
     lats1 = [p['lat'] for p in points1]
     lons1 = [p['lon'] for p in points1]
     lats2 = [p['lat'] for p in points2]
     lons2 = [p['lon'] for p in points2]
     
-    # Plot both routes
-    ax.plot(lons1, lats1, 'b-', linewidth=2, label='Route 1', alpha=0.7)
-    ax.plot(lons2, lats2, 'r-', linewidth=2, label='Route 2', alpha=0.7)
+    # Combine all coordinates to determine bounds
+    all_lats = lats1 + lats2
+    all_lons = lons1 + lons2
     
-    # Mark start and end points
-    if lons1 and lats1:
-        ax.plot(lons1[0], lats1[0], 'bo', markersize=8, label='Route 1 Start')
-        ax.plot(lons1[-1], lats1[-1], 'bs', markersize=8, label='Route 1 End')
+    # Create GeoDataFrames for the routes
+    route1_line = LineString(list(zip(lons1, lats1)))
+    route2_line = LineString(list(zip(lons2, lats2)))
     
-    if lons2 and lats2:
-        ax.plot(lons2[0], lats2[0], 'ro', markersize=8, label='Route 2 Start')
-        ax.plot(lons2[-1], lats2[-1], 'rs', markersize=8, label='Route 2 End')
+    # Create GeoDataFrames
+    gdf1 = gpd.GeoDataFrame([1], geometry=[route1_line], crs='EPSG:4326')
+    gdf2 = gpd.GeoDataFrame([1], geometry=[route2_line], crs='EPSG:4326')
     
-    # Set equal aspect ratio and labels
-    ax.set_aspect('equal')
-    ax.set_xlabel('Longitude')
-    ax.set_ylabel('Latitude')
-    ax.set_title('GPX Route Comparison')
-    ax.legend()
-    ax.grid(True, alpha=0.3)
+    # Transform to Web Mercator for contextily
+    gdf1_mercator = gdf1.to_crs('EPSG:3857')
+    gdf2_mercator = gdf2.to_crs('EPSG:3857')
     
-    # Add some basic statistics
-    if points1 and points2:
-        stats_text = f"Route 1: {len(points1)} points\\nRoute 2: {len(points2)} points"
-        ax.text(0.02, 0.98, stats_text, transform=ax.transAxes, 
-                verticalalignment='top', bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5))
+    # Create the plot
+    fig, ax = plt.subplots(figsize=(15, 12))
+    
+    # Plot the routes (no markers, no labels)
+    gdf1_mercator.plot(ax=ax, color='blue', linewidth=3, alpha=0.8)
+    gdf2_mercator.plot(ax=ax, color='red', linewidth=3, alpha=0.8)
+    
+    # Add satellite basemap with greyscale and brightness adjustment
+    try:
+        ctx.add_basemap(ax, crs=gdf1_mercator.crs.to_string(), source=ctx.providers.Esri.WorldImagery, zoom='auto', alpha=0.6)
+        # Apply greyscale and brightness filter to the current axes
+        for im in ax.get_images():
+            im.set_cmap('gray')
+            # Increase brightness by adjusting the color mapping
+            im.set_clim(vmin=0, vmax=180)  # Brightens the image
+    except Exception as e:
+        print(f"Warning: Could not load satellite imagery, using OpenStreetMap instead: {e}")
+        ctx.add_basemap(ax, crs=gdf1_mercator.crs.to_string(), source=ctx.providers.OpenStreetMap.Mapnik, zoom='auto', alpha=0.6)
+    
+    # Remove axis labels and ticks
+    ax.set_xlabel('')
+    ax.set_ylabel('')
+    ax.set_xticks([])
+    ax.set_yticks([])
     
     plt.tight_layout()
-    plt.savefig(output_path, dpi=300, bbox_inches='tight')
+    plt.savefig(output_path, dpi=300, bbox_inches='tight', facecolor='white')
     plt.close()
 
 def main():

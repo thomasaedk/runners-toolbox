@@ -28,3 +28,6 @@ notes.txt
 
 # Claude configuration files
 .claude/
+
+# Generated files
+/backend/uploads/*
