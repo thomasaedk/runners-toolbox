@@ -1,0 +1,41 @@
+{
+  "title": "Runner's Toolbox",
+  "subtitle": "Essential tools for runners",
+  "tabs": {
+    "gpxCompare": "GPX Compare",
+    "tool2": "Tool 2",
+    "tool3": "Tool 3"
+  },
+  "gpxCompare": {
+    "title": "GPX File Comparison",
+    "description": "Upload two GPX files to compare running routes and generate a visualization.",
+    "firstFile": "First GPX File",
+    "secondFile": "Second GPX File",
+    "chooseFile": "Choose GPX File",
+    "dragDrop": "or drag and drop a .gpx file here",
+    "selected": "Selected:",
+    "size": "Size:",
+    "compare": "Compare Routes",
+    "processing": "Processing...",
+    "clearFiles": "Clear Files",
+    "comparisonResult": "Comparison Result",
+    "errors": {
+      "selectBothFiles": "Please select both GPX files",
+      "onlyGpxFiles": "Please select a .gpx file",
+      "onlyGpxFilesDrop": "Please drop a .gpx file",
+      "processError": "Error processing files",
+      "connectionError": "Error connecting to server"
+    }
+  },
+  "placeholderTool": {
+    "comingSoon": "This tool is coming soon! It will provide additional functionality for runners.",
+    "underDevelopment": "🚧 Under Development",
+    "developmentMessage": "This feature is currently being developed and will be available soon.",
+    "checkBack": "Check back later for exciting new running tools!"
+  },
+  "language": {
+    "switch": "Language",
+    "english": "English",
+    "danish": "Danish"
+  }
+}

@@ -1,0 +1,12 @@
+# Local notes
+notes.txt
+
+# Claude configuration files
+.claude/
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+out/

@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./src:/app/src
+      - ./public:/app/public
+      - ./index.html:/app/index.html
+      - ./vite.config.js:/app/vite.config.js
+      - ./vite.config.dev.js:/app/vite.config.dev.js
+      - ./package.json:/app/package.json
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+    command: npm run dev -- --host 0.0.0.0 --config vite.config.dev.js
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./backend:/app/backend
+    environment:
+      - FLASK_ENV=development
+      - FLASK_DEBUG=1
+    command: python3 -m flask --app backend/app.py run --host=0.0.0.0 --port=5000 --debug

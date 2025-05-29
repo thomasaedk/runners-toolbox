@@ -1,0 +1,41 @@
+{
+  "title": "Løbers Værktøjskasse",
+  "subtitle": "Essentielle værktøjer til løbere",
+  "tabs": {
+    "gpxCompare": "GPX Sammenligning",
+    "tool2": "Værktøj 2",
+    "tool3": "Værktøj 3"
+  },
+  "gpxCompare": {
+    "title": "GPX Fil Sammenligning",
+    "description": "Upload to GPX filer for at sammenligne løberuter og generere en visualisering.",
+    "firstFile": "Første GPX Fil",
+    "secondFile": "Anden GPX Fil",
+    "chooseFile": "Vælg GPX Fil",
+    "dragDrop": "eller træk og slip en .gpx fil her",
+    "selected": "Valgt:",
+    "size": "Størrelse:",
+    "compare": "Sammenlign Ruter",
+    "processing": "Behandler...",
+    "clearFiles": "Ryd Filer",
+    "comparisonResult": "Sammenligningsresultat",
+    "errors": {
+      "selectBothFiles": "Vælg venligst begge GPX filer",
+      "onlyGpxFiles": "Vælg venligst en .gpx fil",
+      "onlyGpxFilesDrop": "Drop venligst en .gpx fil",
+      "processError": "Fejl ved behandling af filer",
+      "connectionError": "Fejl ved forbindelse til server"
+    }
+  },
+  "placeholderTool": {
+    "comingSoon": "Dette værktøj kommer snart! Det vil give yderligere funktionalitet til løbere.",
+    "underDevelopment": "🚧 Under Udvikling",
+    "developmentMessage": "Denne funktion er i øjeblikket under udvikling og vil være tilgængelig snart.",
+    "checkBack": "Kom tilbage senere for spændende nye løbeværktøjer!"
+  },
+  "language": {
+    "switch": "Sprog",
+    "english": "Engelsk",
+    "danish": "Dansk"
+  }
+}
