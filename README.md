@@ -18,10 +18,31 @@ A web application providing essential tools for runners, including GPX file comp
 
 ### Prerequisites
 
-- Node.js (v16 or higher)
-- Python 3.8 or higher
-- pip (Python package manager)
-- Docker (optional, for containerized deployment)
+#### Option 1: Docker Only (Recommended for Quick Setup)
+- **Docker** - Only requirement for running the application
+
+**What you get:**
+- ✅ Complete application (frontend + backend)
+- ✅ No local development environment needed
+- ✅ Consistent deployment across platforms
+
+**What you don't get:**
+- ❌ No hot reload during development
+- ❌ Cannot edit code and see changes instantly
+- ❌ Need to rebuild container for code changes
+
+#### Option 2: Full Development Setup
+- **Node.js** (v16 or higher)
+- **Python 3.8** or higher
+- **pip** (Python package manager)
+- **Docker** (optional, for containerized deployment)
+- **Docker Compose** (optional, for development with hot reload)
+
+**What you get:**
+- ✅ Full development environment
+- ✅ Hot reload for instant code changes
+- ✅ Direct access to source code
+- ✅ Debugging capabilities
 
 ### Installation & Running
 
