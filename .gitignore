@@ -31,3 +31,9 @@ notes.txt
 
 # Generated files
 /backend/uploads/*
+
+# Ignore all Python bytecode files
+*.py[cod]
+
+# Ignore __pycache__ directories
+__pycache__/
