@@ -38,7 +38,7 @@ def parse_gpx_file(file_path):
     
     return points
 
-def create_comparison_plot(points1, points2, output_path):
+def create_comparison_plot(points1, points2, output_path, file1_path, file2_path):
     """Create a comparison visualization of two GPX tracks on satellite imagery."""
     # Extract coordinates
     lats1 = [p['lat'] for p in points1]
@@ -64,11 +64,13 @@ def create_comparison_plot(points1, points2, output_path):
     
     # Create the plot
     fig, ax = plt.subplots(figsize=(15, 12))
-    
+
     # Plot the routes (no markers, no labels)
-    gdf1_mercator.plot(ax=ax, color='blue', linewidth=3, alpha=0.8)
-    gdf2_mercator.plot(ax=ax, color='red', linewidth=3, alpha=0.8)
-    
+    file1_basename = os.path.basename(file1_path)
+    file2_basename = os.path.basename(file2_path)
+    gdf1_mercator.plot(ax=ax, color='blue', linewidth=3, alpha=0.8, label=os.path.basename(os.path.splitext(file1_basename)[0]))
+    gdf2_mercator.plot(ax=ax, color='red', linewidth=3, alpha=0.8, label=os.path.basename(os.path.splitext(file2_basename)[0]))
+
     # Add satellite basemap with greyscale and brightness adjustment
     try:
         ctx.add_basemap(ax, crs=gdf1_mercator.crs.to_string(), source=ctx.providers.Esri.WorldImagery, zoom='auto', alpha=0.6)
@@ -80,12 +82,17 @@ def create_comparison_plot(points1, points2, output_path):
     except Exception as e:
         print(f"Warning: Could not load satellite imagery, using OpenStreetMap instead: {e}")
         ctx.add_basemap(ax, crs=gdf1_mercator.crs.to_string(), source=ctx.providers.OpenStreetMap.Mapnik, zoom='auto', alpha=0.6)
-    
+
     # Remove axis labels and ticks
     ax.set_xlabel('')
     ax.set_ylabel('')
     ax.set_xticks([])
     ax.set_yticks([])
+    ax.legend(
+        loc='upper right',
+        bbox_to_anchor=(1.001, 1.001),
+        borderaxespad=0.3
+    )
     
     plt.tight_layout()
     plt.savefig(output_path, dpi=300, bbox_inches='tight', facecolor='white')
@@ -132,7 +139,7 @@ def main():
         
         print("Creating comparison plot...")
         # Create comparison plot
-        create_comparison_plot(points1, points2, output_path)
+        create_comparison_plot(points1, points2, output_path, file1_path, file2_path)
         
         # Verify output file was created
         if os.path.exists(output_path):

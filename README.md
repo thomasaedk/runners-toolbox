@@ -46,9 +46,8 @@ A web application providing essential tools for runners, including GPX file comp
 
 ### Installation & Running
 
-#### Option 1: Docker (Recommended)
+#### Option 1: Docker Production (Recommended for Quick Setup)
 
-##### Quick Start with Docker
 ```bash
 # Build and run the container
 docker build -t runners-toolbox .
@@ -56,36 +55,29 @@ docker run -p 5173:5173 -p 5000:5000 runners-toolbox
 ```
 
 **When the container is ready:**
-- You'll see log messages indicating both services have started:
-  ```
-  [program:backend] started with pid X
-  [program:frontend] started with pid Y
-  ```
+- You'll see log messages indicating both services have started
 - The container will be healthy when both services are responding (may take 30-60 seconds)
 
-**Access the application at:**
-- **Main website**: http://localhost:5173
-- Backend API: http://localhost:5000 (for development/debugging)
+**Access the application at http://localhost:5173**
 
-##### Docker with custom name
+#### Option 2: Docker Development (Recommended for Development)
+
+For development with hot reload and auto-refresh:
+
 ```bash
-# Build the image
-docker build -t runners-toolbox .
+# Start both frontend and backend with hot reload
+docker-compose -f docker-compose.dev.yml up
 
-# Run with custom container name
-docker run -d --name runners-toolbox-app -p 5173:5173 -p 5000:5000 runners-toolbox
-
-# View logs to see when it's ready
-docker logs runners-toolbox-app
-
-# Check if container is healthy
-docker ps
-
-# Stop the container
-docker stop runners-toolbox-app
+# Or run in detached mode
+docker-compose -f docker-compose.dev.yml up -d
 ```
 
-#### Option 2: Manual Development Setup
+**Features:**
+- ✅ Frontend and backend hot reload
+- ✅ Edit code and see changes instantly
+- ✅ Volume mounts for live code editing
+
+#### Option 3: Manual Development Setup
 
 ##### 1. Install Frontend Dependencies
 ```bash
@@ -133,47 +125,15 @@ The React app will start on http://localhost:5173
 - The frontend automatically proxies API requests to the backend
 - Hot reload is enabled for both frontend and backend development
 
-### Docker Development
-
-#### Option A: Development with Hot Reload (Recommended for development)
-
-For the best development experience with hot reloading and auto-refresh:
+### Docker Development Commands
 
 ```bash
-# Start both frontend and backend with hot reload
-docker-compose -f docker-compose.dev.yml up
-
-# Or run in detached mode
-docker-compose -f docker-compose.dev.yml up -d
-
 # View logs
 docker-compose -f docker-compose.dev.yml logs -f
 
 # Stop services
 docker-compose -f docker-compose.dev.yml down
 ```
-
-**Features:**
-- ✅ **Frontend hot reload**: Changes to React code automatically refresh the browser
-- ✅ **Backend hot reload**: Flask development server restarts automatically on Python changes
-- ✅ **Volume mounts**: Edit code on your host machine, see changes instantly
-- ✅ **Separate services**: Frontend and backend run in separate containers
-
-#### Option B: Production Image with Volume Mounts
-
-For testing the production build with some code editing capability:
-
-```bash
-# Build the production image
-docker build -t runners-toolbox .
-
-# Run with volume mounts (limited hot reload)
-docker run -p 5173:5173 -p 5000:5000 \
-  -v $(pwd)/backend:/app/backend \
-  runners-toolbox
-```
-
-**Note**: This serves pre-built frontend files, so frontend changes require container restart.
 
 ## API Endpoints
 
