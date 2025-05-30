@@ -146,6 +146,7 @@ function GpxCompareTool() {
             onDragLeave={(e) => handleDragLeave('file1', e)}
           >
             <input
+              key={files?.file1?.name}
               type="file"
               accept=".gpx"
               onChange={(e) => handleFileChange('file1', e)}
@@ -176,6 +177,7 @@ function GpxCompareTool() {
             onDragLeave={(e) => handleDragLeave('file2', e)}
           >
             <input
+              key={files?.file2?.name}
               type="file"
               accept=".gpx"
               onChange={(e) => handleFileChange('file2', e)}
