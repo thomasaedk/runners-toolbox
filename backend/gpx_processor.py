@@ -38,7 +38,7 @@ def parse_gpx_file(file_path):
     
     return points
 
-def create_comparison_plot(points1, points2, output_path, file1_path, file2_path):
+def create_comparison_plot(points1, points2, output_path, file1_path, file2_path, map_type='satellite'):
     """Create a comparison visualization of two GPX tracks on satellite imagery."""
     # Extract coordinates
     lats1 = [p['lat'] for p in points1]
@@ -92,16 +92,19 @@ def create_comparison_plot(points1, points2, output_path, file1_path, file2_path
     ax.set_xlim(combined_bounds[0] - width * 0.05, combined_bounds[2] + legend_padding_x)
     ax.set_ylim(combined_bounds[1] - bottom_padding, combined_bounds[3] + legend_padding_y)
 
-    # Add satellite basemap with greyscale and brightness adjustment
+    # Add basemap based on map_type selection
     try:
-        ctx.add_basemap(ax, crs=gdf1_mercator.crs.to_string(), source=ctx.providers.Esri.WorldImagery, zoom='auto', alpha=0.6)
-        # Apply greyscale and brightness filter to the current axes
-        for im in ax.get_images():
-            im.set_cmap('gray')
-            # Increase brightness by adjusting the color mapping
-            im.set_clim(vmin=0, vmax=180)  # Brightens the image
+        if map_type == 'satellite':
+            ctx.add_basemap(ax, crs=gdf1_mercator.crs.to_string(), source=ctx.providers.Esri.WorldImagery, zoom='auto', alpha=0.6)
+            # Apply greyscale and brightness filter to the current axes
+            for im in ax.get_images():
+                im.set_cmap('gray')
+                # Increase brightness by adjusting the color mapping
+                im.set_clim(vmin=0, vmax=180)  # Brightens the image
+        else:  # street map
+            ctx.add_basemap(ax, crs=gdf1_mercator.crs.to_string(), source=ctx.providers.OpenStreetMap.Mapnik, zoom='auto', alpha=0.7)
     except Exception as e:
-        print(f"Warning: Could not load satellite imagery, using OpenStreetMap instead: {e}")
+        print(f"Warning: Could not load {map_type} imagery, using OpenStreetMap instead: {e}")
         ctx.add_basemap(ax, crs=gdf1_mercator.crs.to_string(), source=ctx.providers.OpenStreetMap.Mapnik, zoom='auto', alpha=0.6)
 
     # Remove axis labels and ticks
@@ -124,13 +127,14 @@ def create_comparison_plot(points1, points2, output_path, file1_path, file2_path
 def main():
     print(f"GPX Processor started with args: {sys.argv}")
     
-    if len(sys.argv) != 4:
-        print("Usage: python3 gpx_processor.py <file1.gpx> <file2.gpx> <output.png>")
+    if len(sys.argv) < 4 or len(sys.argv) > 5:
+        print("Usage: python3 gpx_processor.py <file1.gpx> <file2.gpx> <output.jpg> [map_type]")
         sys.exit(1)
     
     file1_path = sys.argv[1]
     file2_path = sys.argv[2]
     output_path = sys.argv[3]
+    map_type = sys.argv[4] if len(sys.argv) == 5 else 'satellite'
     
     print(f"Input files: {file1_path}, {file2_path}")
     print(f"Output path: {output_path}")
@@ -160,9 +164,9 @@ def main():
             print("Error: No track points found in second GPX file")
             sys.exit(1)
         
-        print("Creating comparison plot...")
+        print(f"Creating comparison plot with {map_type} background...")
         # Create comparison plot
-        create_comparison_plot(points1, points2, output_path, file1_path, file2_path)
+        create_comparison_plot(points1, points2, output_path, file1_path, file2_path, map_type)
         
         # Verify output file was created
         if os.path.exists(output_path):

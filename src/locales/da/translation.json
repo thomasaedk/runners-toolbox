@@ -9,6 +9,9 @@
   "gpxCompare": {
     "title": "GPX Fil Sammenligning",
     "description": "Upload to GPX filer for at sammenligne løberuter og generere en visualisering.",
+    "mapBackground": "Kort Baggrund",
+    "satellite": "Satellit",
+    "streetMap": "Vejkort",
     "firstFile": "Første GPX Fil",
     "secondFile": "Anden GPX Fil",
     "chooseFile": "Vælg GPX Fil",

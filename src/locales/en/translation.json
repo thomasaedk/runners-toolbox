@@ -9,6 +9,9 @@
   "gpxCompare": {
     "title": "GPX File Comparison",
     "description": "Upload two GPX files to compare running routes and generate a visualization.",
+    "mapBackground": "Map Background",
+    "satellite": "Satellite",
+    "streetMap": "Street Map",
     "firstFile": "First GPX File",
     "secondFile": "Second GPX File",
     "chooseFile": "Choose GPX File",

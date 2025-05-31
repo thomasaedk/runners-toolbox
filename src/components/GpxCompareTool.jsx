@@ -6,6 +6,10 @@ function GpxCompareTool() {
   const [resultImage, setResultImage] = useState(null)
   const [loading, setLoading] = useState(false)
   const [dragActive, setDragActive] = useState({ file1: false, file2: false })
+  const [mapType, setMapType] = useState(() => {
+    // Load map type preference from localStorage
+    return localStorage.getItem('gpx-map-type') || 'satellite'
+  })
   const { t } = useTranslation()
   const resultRef = useRef(null)
 
@@ -96,6 +100,7 @@ function GpxCompareTool() {
     const formData = new FormData()
     formData.append('file1', files.file1)
     formData.append('file2', files.file2)
+    formData.append('mapType', mapType)
 
     try {
       const response = await fetch('/api/compare-gpx', {
@@ -125,6 +130,14 @@ function GpxCompareTool() {
     }
   }
 
+  const handleMapTypeChange = (newMapType) => {
+    setMapType(newMapType)
+    // Save to localStorage
+    localStorage.setItem('gpx-map-type', newMapType)
+    // Clear result image to encourage re-comparison with new map type
+    setResultImage(null)
+  }
+
   const clearFiles = () => {
     setFiles({ file1: null, file2: null })
     setResultImage(null)
@@ -134,6 +147,25 @@ function GpxCompareTool() {
     <div className="tool-container">
       <h2>{t('gpxCompare.title')}</h2>
       <p>{t('gpxCompare.description')}</p>
+      
+      {/* Map Type Toggle */}
+      <div style={{ marginBottom: '2rem' }}>
+        <h3>{t('gpxCompare.mapBackground')}</h3>
+        <div className="map-type-toggle">
+          <button 
+            className={`map-type-button ${mapType === 'satellite' ? 'active' : ''}`}
+            onClick={() => handleMapTypeChange('satellite')}
+          >
+            🛰️ {t('gpxCompare.satellite')}
+          </button>
+          <button 
+            className={`map-type-button ${mapType === 'street' ? 'active' : ''}`}
+            onClick={() => handleMapTypeChange('street')}
+          >
+            🗺️ {t('gpxCompare.streetMap')}
+          </button>
+        </div>
+      </div>
       
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
         <div>

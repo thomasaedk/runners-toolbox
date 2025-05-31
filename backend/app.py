@@ -40,6 +40,10 @@ def compare_gpx():
     print(f"Request files: {list(request.files.keys())}")
     print(f"Request form: {dict(request.form)}")
     
+    # Get map type from form data (default to satellite)
+    map_type = request.form.get('mapType', 'satellite')
+    print(f"Map type: {map_type}")
+    
     if 'file1' not in request.files or 'file2' not in request.files:
         print("ERROR: Missing files in request")
         return jsonify({'error': 'Both files are required'}), 400
@@ -84,7 +88,7 @@ def compare_gpx():
         
         result = subprocess.run([
             'python3', script_path, 
-            filepath1, filepath2, output_path
+            filepath1, filepath2, output_path, map_type
         ], capture_output=True, text=True)
         
         print(f"Script completed with return code: {result.returncode}")
