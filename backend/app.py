@@ -72,7 +72,7 @@ def compare_gpx():
         print("Files saved successfully")
         
         # Create output filename
-        output_filename = 'comparison_result.png'
+        output_filename = 'comparison_result.jpg'
         output_path = os.path.join(UPLOAD_FOLDER, output_filename)
         
         print(f"Output path: {output_path}")
@@ -100,7 +100,7 @@ def compare_gpx():
         print(f"File exists: {os.path.exists(output_path)}")
         if os.path.exists(output_path):
             print("Sending file...")
-            return send_file(output_path, mimetype='image/png')
+            return send_file(output_path, mimetype='image/jpeg')
         else:
             print(f"Output file does not exist at: {output_path}")
             print(f"Contents of upload folder: {os.listdir(UPLOAD_FOLDER) if os.path.exists(UPLOAD_FOLDER) else 'Upload folder does not exist'}")

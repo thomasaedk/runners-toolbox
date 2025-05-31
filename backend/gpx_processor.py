@@ -62,14 +62,35 @@ def create_comparison_plot(points1, points2, output_path, file1_path, file2_path
     gdf1_mercator = gdf1.to_crs('EPSG:3857')
     gdf2_mercator = gdf2.to_crs('EPSG:3857')
     
-    # Create the plot
-    fig, ax = plt.subplots(figsize=(15, 12))
+    # Get combined bounds of both routes
+    combined_bounds = gdf1_mercator.total_bounds
+    gdf2_bounds = gdf2_mercator.total_bounds
+    combined_bounds = [
+        min(combined_bounds[0], gdf2_bounds[0]),  # min x
+        min(combined_bounds[1], gdf2_bounds[1]),  # min y
+        max(combined_bounds[2], gdf2_bounds[2]),  # max x
+        max(combined_bounds[3], gdf2_bounds[3])   # max y
+    ]
+    
+    # Calculate padding for legend (15% of width and height)
+    width = combined_bounds[2] - combined_bounds[0]
+    height = combined_bounds[3] - combined_bounds[1]
+    legend_padding_x = width * 0.15
+    legend_padding_y = height * 0.10
+    
+    # Create the plot with optimized size for web display (fills tool-container width)
+    fig, ax = plt.subplots(figsize=(16, 10))
 
     # Plot the routes (no markers, no labels)
     file1_basename = os.path.basename(file1_path)
     file2_basename = os.path.basename(file2_path)
     gdf1_mercator.plot(ax=ax, color='blue', linewidth=3, alpha=0.8, label=os.path.basename(os.path.splitext(file1_basename)[0]))
     gdf2_mercator.plot(ax=ax, color='red', linewidth=3, alpha=0.8, label=os.path.basename(os.path.splitext(file2_basename)[0]))
+    
+    # Set plot bounds with padding for legend and satellite image text
+    bottom_padding = height * 0.10  # Extra padding at bottom for satellite image attribution text
+    ax.set_xlim(combined_bounds[0] - width * 0.05, combined_bounds[2] + legend_padding_x)
+    ax.set_ylim(combined_bounds[1] - bottom_padding, combined_bounds[3] + legend_padding_y)
 
     # Add satellite basemap with greyscale and brightness adjustment
     try:
@@ -88,14 +109,16 @@ def create_comparison_plot(points1, points2, output_path, file1_path, file2_path
     ax.set_ylabel('')
     ax.set_xticks([])
     ax.set_yticks([])
+    
+    # Position legend in upper right with margin from plot edges
     ax.legend(
         loc='upper right',
-        bbox_to_anchor=(1.001, 1.001),
+        bbox_to_anchor=(0.98, 0.98),
         borderaxespad=0.3
     )
     
     plt.tight_layout()
-    plt.savefig(output_path, dpi=300, bbox_inches='tight', facecolor='white')
+    plt.savefig(output_path, dpi=150, bbox_inches='tight', facecolor='white', format='jpeg', pil_kwargs={'quality': 95})
     plt.close()
 
 def main():
