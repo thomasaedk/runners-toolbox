@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, send_file
+from flask import Flask, request, jsonify, send_file, send_from_directory
 from flask_cors import CORS
 import os
 import tempfile
@@ -134,6 +134,32 @@ def test():
     print("Test endpoint called")
     return jsonify({'message': 'Backend is working!'})
 
+# Serve React frontend
+@app.route('/')
+def serve_frontend():
+    frontend_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'frontend')
+    if os.path.exists(frontend_folder):
+        return send_from_directory(frontend_folder, 'index.html')
+    else:
+        return jsonify({'error': 'Frontend not found'}), 404
+
+# Serve static assets (JS, CSS, images, etc.)
+@app.route('/assets/<path:path>')
+def serve_assets(path):
+    frontend_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'frontend')
+    return send_from_directory(os.path.join(frontend_folder, 'assets'), path)
+
+# Catch-all route for React Router (only for non-API routes)
+@app.route('/<path:path>')
+def serve_spa(path):
+    # Don't handle API routes
+    if path.startswith('api/'):
+        return jsonify({'error': 'API endpoint not found'}), 404
+    
+    # For other routes, serve the React app
+    return serve_frontend()
+
 if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 5000))
     debug = os.environ.get('FLASK_ENV') != 'production'
-    app.run(host='0.0.0.0', port=5000, debug=debug)
+    app.run(host='0.0.0.0', port=port, debug=debug)
