@@ -22,6 +22,7 @@
     "processing": "Processing...",
     "clearFiles": "Clear Files",
     "comparisonResult": "Comparison Result",
+    "tryWithExamples": "Try with examples:",
     "errors": {
       "selectBothFiles": "Please select both GPX files",
       "onlyGpxFiles": "Please select a .gpx file",

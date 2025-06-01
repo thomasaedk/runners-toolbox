@@ -22,6 +22,7 @@
     "processing": "Behandler...",
     "clearFiles": "Ryd Filer",
     "comparisonResult": "Sammenligningsresultat",
+    "tryWithExamples": "Prøv med eksempler:",
     "errors": {
       "selectBothFiles": "Vælg venligst begge GPX filer",
       "onlyGpxFiles": "Vælg venligst en .gpx fil",

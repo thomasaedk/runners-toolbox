@@ -4,7 +4,7 @@ function LanguageSwitcher() {
   const { i18n, t } = useTranslation()
 
   const changeLanguage = (lng) => {
-    console.log('Language change requested:', lng)
+    // console.log('Language change requested:', lng)
     i18n.changeLanguage(lng)
   }
 

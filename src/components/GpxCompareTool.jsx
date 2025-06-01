@@ -149,7 +149,7 @@ function GpxCompareTool() {
       
       {/* Example GPX Files */}
       <div className="example-files">
-        <span className="example-files-label">Try with examples:</span>
+        <span className="example-files-label">{t('gpxCompare.tryWithExamples')}</span>
         <a 
           href="https://connect.garmin.com/modern/proxy/course-service/course/gpx/278051153" 
           className="example-link"
