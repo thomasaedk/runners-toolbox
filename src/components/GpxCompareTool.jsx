@@ -147,6 +147,30 @@ function GpxCompareTool() {
       <h2>{t('gpxCompare.title')}</h2>
       <p>{t('gpxCompare.description')}</p>
       
+      {/* Example GPX Files */}
+      <div className="example-files">
+        <span className="example-files-label">Try with examples:</span>
+        <a 
+          href="https://connect.garmin.com/modern/proxy/course-service/course/gpx/278051153" 
+          className="example-link"
+          target="_blank"
+          rel="noopener noreferrer"
+          download="aarhus-city-half-2024.gpx"
+        >
+          Aarhus City Half 2024
+        </a>
+        <span className="example-separator">•</span>
+        <a 
+          href="https://connect.garmin.com/modern/proxy/course-service/course/gpx/356705289" 
+          className="example-link"
+          target="_blank"
+          rel="noopener noreferrer"
+          download="aarhus-city-half-2025.gpx"
+        >
+          Aarhus City Half 2025
+        </a>
+      </div>
+      
       {/* Map Type Toggle */}
       <div style={{ marginBottom: '2rem' }}>
         <h3>{t('gpxCompare.mapBackground')}</h3>
@@ -166,7 +190,7 @@ function GpxCompareTool() {
         </div>
       </div>
       
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+      <div className="file-upload-grid">
         <div>
           <h3>{t('gpxCompare.firstFile')}</h3>
           <div 
@@ -230,12 +254,11 @@ function GpxCompareTool() {
         </div>
       </div>
 
-      <div style={{ textAlign: 'center', margin: '2rem 0' }}>
+      <div className="button-container">
         <button 
           className="upload-button" 
           onClick={handleCompare}
           disabled={!files.file1 || !files.file2 || loading}
-          style={{ marginRight: '1rem' }}
         >
           {loading ? t('gpxCompare.processing') : t('gpxCompare.compare')}
         </button>

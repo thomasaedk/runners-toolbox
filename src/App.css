@@ -361,6 +361,59 @@ body {
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }
 
+/* Ensure proper touch targets on mobile */
+@media (hover: none) and (pointer: coarse) {
+  .upload-button,
+  .map-type-button,
+  .tab,
+  .language-select {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* Example files section */
+.example-files {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 1.5rem 0;
+  padding: 1rem 1.25rem;
+  background: rgba(102, 126, 234, 0.03);
+  border: 1px solid rgba(102, 126, 234, 0.1);
+  border-radius: 12px;
+  font-size: 0.9rem;
+  flex-wrap: wrap;
+}
+
+.example-files-label {
+  color: #6b7280;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.example-link {
+  color: #667eea;
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  position: relative;
+}
+
+.example-link:hover {
+  color: #5a67d8;
+  background: rgba(102, 126, 234, 0.08);
+  text-decoration: underline;
+}
+
+.example-separator {
+  color: #d1d5db;
+  font-weight: 300;
+  margin: 0 0.25rem;
+}
+
 /* Additional styling for headings */
 .tool-container h3 {
   color: #374151;
@@ -370,36 +423,196 @@ body {
   margin-top: 1.5rem;
 }
 
+/* Button container */
+.button-container {
+  text-align: center;
+  margin: 2rem 0;
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* File upload grid layout */
+.file-upload-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin: 2rem 0;
+}
+
 /* Mobile responsiveness */
 @media (max-width: 768px) {
+  #root {
+    padding: 1rem 0.5rem;
+  }
+  
   .app {
     padding: 1.5rem;
     border-radius: 16px;
+  }
+  
+  .app-header {
+    margin-bottom: 2rem;
+    padding: 1rem 0;
   }
   
   .app-header h1 {
     font-size: 2.5rem;
   }
   
+  .app-header p {
+    font-size: 1rem;
+  }
+  
   .tabs {
     flex-direction: column;
     gap: 0.25rem;
+    margin-bottom: 2rem;
   }
   
   .tab {
     padding: 0.75rem 1.5rem;
+    font-size: 0.95rem;
   }
   
   .tool-container {
     padding: 1.5rem;
   }
   
+  .tool-container h2 {
+    font-size: 1.75rem;
+    margin-bottom: 1rem;
+  }
+  
+  .tool-container h3 {
+    font-size: 1.1rem;
+    margin-top: 1rem;
+    margin-bottom: 0.75rem;
+  }
+  
+  .file-upload-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    margin: 1.5rem 0;
+  }
+  
   .file-upload-area {
     padding: 2rem 1rem;
   }
   
+  .file-upload-area::before {
+    font-size: 2.5rem;
+    margin-bottom: 0.75rem;
+  }
+  
+  .upload-button {
+    padding: 0.875rem 1.75rem;
+    margin: 0.5rem;
+    font-size: 0.95rem;
+    min-height: 44px; /* Ensure minimum touch target size */
+  }
+  
+  .map-type-toggle {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  
+  .map-type-button {
+    padding: 1rem 1.5rem;
+    font-size: 1rem;
+    min-height: 44px; /* Ensure minimum touch target size */
+  }
+  
+  .file-info {
+    padding: 1rem;
+    font-size: 0.9rem;
+  }
+  
+  .result-image {
+    margin: 1.5rem auto;
+  }
+  
+  .example-files {
+    padding: 0.875rem 1rem;
+    margin: 1rem 0;
+    font-size: 0.85rem;
+    justify-content: center;
+  }
+  
+  .example-files-label {
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 480px) {
+  #root {
+    padding: 0.5rem 0.25rem;
+  }
+  
+  .app {
+    padding: 1rem;
+    border-radius: 12px;
+  }
+  
+  .app-header h1 {
+    font-size: 2rem;
+    line-height: 1.2;
+  }
+  
+  .app-header p {
+    font-size: 0.95rem;
+  }
+  
+  .tool-container {
+    padding: 1rem;
+  }
+  
+  .tool-container h2 {
+    font-size: 1.5rem;
+    line-height: 1.3;
+  }
+  
+  .tool-container p {
+    font-size: 1rem;
+    line-height: 1.5;
+  }
+  
+  .file-upload-area {
+    padding: 1.5rem 0.75rem;
+  }
+  
+  .file-upload-area p {
+    font-size: 0.9rem;
+    margin: 0.5rem 0;
+  }
+  
   .upload-button {
     padding: 0.75rem 1.5rem;
-    margin: 0.5rem;
+    margin: 0.25rem;
+    width: 100%;
+    max-width: 280px;
+  }
+  
+  .map-type-button {
+    padding: 0.875rem 1.25rem;
+  }
+  
+  .button-container {
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  
+  .example-files {
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    text-align: center;
+    padding: 1rem 0.75rem;
+  }
+  
+  .example-separator {
+    display: none;
   }
 }
