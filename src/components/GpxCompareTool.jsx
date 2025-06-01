@@ -38,20 +38,19 @@ function GpxCompareTool() {
   const handleDrop = (fileNumber, event) => {
     event.preventDefault()
     event.stopPropagation()
-    
-    console.log('Drop event for', fileNumber, event.dataTransfer.files)
+    // console.log('Drop event for', fileNumber, event.dataTransfer.files)
     
     // Reset drag active state
     setDragActive(prev => ({ ...prev, [fileNumber]: false }))
     
     // Check if there are files in the drop event
     if (!event.dataTransfer.files || event.dataTransfer.files.length === 0) {
-      console.log('No files in drop event')
+      // console.log('No files in drop event')
       return // No files dropped, do nothing
     }
     
     const file = event.dataTransfer.files[0]
-    console.log('File dropped:', file.name, file.type)
+    // console.log('File dropped:', file.name, file.type)
     
     // Check both file extension and MIME type
     const isValidGpx = (file.name && file.name.endsWith('.gpx')) || 
@@ -60,7 +59,7 @@ function GpxCompareTool() {
                        file.type === 'text/xml'
     
     if (file && isValidGpx) {
-      console.log('Valid GPX file, setting', fileNumber)
+      // console.log('Valid GPX file, setting', fileNumber)
       setFiles(prev => ({ ...prev, [fileNumber]: file }))
     } else {
       console.log('Invalid file type. Name:', file.name, 'Type:', file.type)
@@ -78,14 +77,14 @@ function GpxCompareTool() {
   const handleDragEnter = (fileNumber, event) => {
     event.preventDefault()
     event.stopPropagation()
-    console.log('Drag enter', fileNumber)
+    // console.log('Drag enter', fileNumber)
     setDragActive(prev => ({ ...prev, [fileNumber]: true }))
   }
 
   const handleDragLeave = (fileNumber, event) => {
     event.preventDefault()
     event.stopPropagation()
-    console.log('Drag leave', fileNumber)
+    // console.log('Drag leave', fileNumber)
     setDragActive(prev => ({ ...prev, [fileNumber]: false }))
   }
 
