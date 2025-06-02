@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import './App.css'
 import GpxCompareTool from './components/GpxCompareTool'
 import PlaceholderTool from './components/PlaceholderTool'
+import RouteExtractor from './components/RouteExtractor'
 import LanguageSwitcher from './components/LanguageSwitcher'
 
 function App() {
@@ -45,7 +46,7 @@ function App() {
 
       <main className="main-content">
         {activeTab === 'gpx-compare' && <GpxCompareTool />}
-        {activeTab === 'tool2' && <PlaceholderTool name={t('tabs.tool2')} />}
+        {activeTab === 'tool2' && <RouteExtractor />}
         {activeTab === 'tool3' && <PlaceholderTool name={t('tabs.tool3')} />}
       </main>
     </div>

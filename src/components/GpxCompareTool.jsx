@@ -117,7 +117,7 @@ function GpxCompareTool() {
           const errorData = await response.json()
           console.error('Backend error:', errorData)
           alert(t('gpxCompare.errors.processError') + (errorData.details ? `\n\nDetails: ${errorData.details}` : ''))
-        } catch (e) {
+        } catch {
           alert(t('gpxCompare.errors.processError'))
         }
       }

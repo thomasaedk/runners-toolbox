@@ -10,6 +10,7 @@ CORS(app)
 
 UPLOAD_FOLDER = 'uploads'
 ALLOWED_EXTENSIONS = {'gpx'}
+IMAGE_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'bmp', 'tiff'}
 
 # Create uploads directory with absolute path
 if not os.path.exists(UPLOAD_FOLDER):
@@ -20,19 +21,26 @@ else:
 
 # Also create backend/uploads for the Docker container
 backend_upload_folder = '/app/backend/uploads'
-if not os.path.exists(backend_upload_folder):
-    os.makedirs(backend_upload_folder)
-    print(f"Created backend uploads directory: {backend_upload_folder}")
-else:
-    print(f"Backend uploads directory exists: {backend_upload_folder}")
-
-# Use the backend uploads folder in Docker
-if os.path.exists('/app/backend'):
-    UPLOAD_FOLDER = backend_upload_folder
+try:
+    if not os.path.exists(backend_upload_folder):
+        os.makedirs(backend_upload_folder)
+        print(f"Created backend uploads directory: {backend_upload_folder}")
+    else:
+        print(f"Backend uploads directory exists: {backend_upload_folder}")
+    
+    # Use the backend uploads folder in Docker
+    if os.path.exists('/app/backend'):
+        UPLOAD_FOLDER = backend_upload_folder
+except PermissionError:
+    print("Docker environment not available, using local uploads folder")
 
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def allowed_image_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in IMAGE_EXTENSIONS
 
 @app.route('/api/compare-gpx', methods=['POST'])
 def compare_gpx():
@@ -124,6 +132,94 @@ def compare_gpx():
                 os.remove(filepath2)
         except:
             pass
+
+@app.route('/api/upload-route-image', methods=['POST'])
+def upload_route_image():
+    if 'image' not in request.files:
+        return jsonify({'error': 'No image file provided'}), 400
+    
+    file = request.files['image']
+    if file.filename == '':
+        return jsonify({'error': 'No file selected'}), 400
+    
+    if not allowed_image_file(file.filename):
+        return jsonify({'error': 'Invalid file type. Only images are allowed.'}), 400
+    
+    try:
+        filename = secure_filename(file.filename)
+        filepath = os.path.join(UPLOAD_FOLDER, f"route_image_{filename}")
+        file.save(filepath)
+        
+        return jsonify({
+            'success': True,
+            'filename': filename,
+            'filepath': filepath
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/align-image', methods=['POST'])
+def align_image():
+    data = request.get_json()
+    
+    if not data or 'filename' not in data or 'controlPoints' not in data:
+        return jsonify({'error': 'Missing required data'}), 400
+    
+    try:
+        script_path = os.path.join(os.path.dirname(__file__), 'route_extractor.py')
+        filepath = os.path.join(UPLOAD_FOLDER, f"route_image_{data['filename']}")
+        
+        import json as json_lib
+        control_points_json = json_lib.dumps(data['controlPoints'])
+        
+        result = subprocess.run([
+            'python3', script_path, 'align',
+            filepath,
+            control_points_json
+        ], capture_output=True, text=True)
+        
+        if result.returncode != 0:
+            return jsonify({'error': 'Failed to align image', 'details': result.stderr}), 500
+        
+        return jsonify({'success': True, 'message': 'Image aligned successfully'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/extract-route', methods=['POST'])
+def extract_route():
+    data = request.get_json()
+    
+    if not data or 'filename' not in data:
+        return jsonify({'error': 'Missing required data'}), 400
+    
+    try:
+        script_path = os.path.join(os.path.dirname(__file__), 'route_extractor.py')
+        filepath = os.path.join(UPLOAD_FOLDER, f"route_image_{data['filename']}")
+        
+        route_points = data.get('routePoints', [])
+        
+        import json as json_lib
+        route_points_json = json_lib.dumps(route_points)
+        
+        result = subprocess.run([
+            'python3', script_path, 'extract',
+            filepath,
+            route_points_json
+        ], capture_output=True, text=True)
+        
+        if result.returncode != 0:
+            return jsonify({'error': 'Failed to extract route', 'details': result.stderr}), 500
+        
+        gpx_filename = f"extracted_route_{data['filename']}.gpx"
+        gpx_path = os.path.join(UPLOAD_FOLDER, gpx_filename)
+        
+        if os.path.exists(gpx_path):
+            return send_file(gpx_path, as_attachment=True, download_name=gpx_filename)
+        else:
+            return jsonify({'error': 'Failed to generate GPX file'}), 500
+            
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/health', methods=['GET'])
 def health_check():
