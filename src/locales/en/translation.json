@@ -15,6 +15,7 @@
     "firstFile": "First GPX File",
     "secondFile": "Second GPX File",
     "chooseFile": "Choose GPX File",
+    "replaceFile": "Replace File",
     "dragDrop": "or drag and drop a .gpx file here",
     "selected": "Selected:",
     "size": "Size:",
@@ -28,8 +29,32 @@
       "onlyGpxFiles": "Please select a .gpx file",
       "onlyGpxFilesDrop": "Please drop a .gpx file",
       "processError": "Error processing files",
-      "connectionError": "Error connecting to server"
-    }
+      "connectionError": "Error connecting to server",
+      "networkError": "Network connection lost. Please check your internet connection and try again.",
+      "timeoutError": "The request took too long to complete. Please try again with smaller files or check your connection."
+    },
+    "warnings": {
+      "filesUploaded": "You have uploaded files that will be lost if you navigate away. Are you sure you want to leave?",
+      "processingInProgress": "Route comparison is currently being processed. Leaving now will cancel the operation. Are you sure?",
+      "tabSwitch": "You have uploaded files in the GPX Compare tool. Switching tabs will lose your progress. Continue?"
+    },
+    "showDirections": "Show Direction Arrows",
+    "individualMaps": "Individual Maps",
+    "combinedView": "Combined View",
+    "detailOverview": "Detail & Overview",
+    "syncMaps": "Sync Maps",
+    "zoomIn": "Zoom In",
+    "zoomOut": "Zoom Out",
+    "fitView": "Fit to View",
+    "totalPoints": "Total Points",
+    "overlapPoints": "Overlap Points",
+    "viewMode": "View Mode",
+    "noData": "No route data available",
+    "only": "Only",
+    "detailView": "Detail View",
+    "overviewMap": "Overview",
+    "combinedComparison": "Combined Comparison",
+    "mapOpacity": "Map Opacity"
   },
   "placeholderTool": {
     "comingSoon": "This tool is coming soon! It will provide additional functionality for runners.",

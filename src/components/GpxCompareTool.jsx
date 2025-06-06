@@ -1,10 +1,12 @@
 import { useState, useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+import DualMapView from './DualMapView'
 
-function GpxCompareTool() {
+function GpxCompareTool({ onStateChange }) {
   const [files, setFiles] = useState({ file1: null, file2: null })
-  const [resultImage, setResultImage] = useState(null)
+  const [resultData, setResultData] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [showDirections, setShowDirections] = useState(true)
   const [dragActive, setDragActive] = useState({ file1: false, file2: false })
   const [mapType, setMapType] = useState(() => {
     // Load map type preference from localStorage
@@ -13,18 +15,45 @@ function GpxCompareTool() {
   const { t } = useTranslation()
   const resultRef = useRef(null)
 
-  // Scroll to result when image is loaded
+  // Check if files are uploaded or processing is in progress
+  const hasUnsavedWork = files.file1 || files.file2 || loading
+
+  // Notify parent component of state changes
   useEffect(() => {
-    if (resultImage && resultRef.current) {
+    if (onStateChange) {
+      onStateChange({ hasUnsavedWork, loading })
+    }
+  }, [hasUnsavedWork, loading, onStateChange])
+
+  // Scroll to result when data is loaded
+  useEffect(() => {
+    if (resultData && resultRef.current) {
       setTimeout(() => {
         resultRef.current.scrollIntoView({ 
           behavior: 'smooth', 
           block: 'start',
           inline: 'nearest'
         })
-      }, 100) // Small delay to ensure image is rendered
+      }, 100) // Small delay to ensure component is rendered
     }
-  }, [resultImage])
+  }, [resultData])
+
+  // Add beforeunload warning when files are uploaded or processing
+  useEffect(() => {
+    const handleBeforeUnload = (event) => {
+      if (hasUnsavedWork) {
+        const message = loading 
+          ? t('gpxCompare.warnings.processingInProgress')
+          : t('gpxCompare.warnings.filesUploaded')
+        event.preventDefault()
+        event.returnValue = message
+        return message
+      }
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [hasUnsavedWork, loading, t])
 
   const handleFileChange = (fileNumber, event) => {
     const file = event.target.files[0]
@@ -102,15 +131,20 @@ function GpxCompareTool() {
     formData.append('mapType', mapType)
 
     try {
-      const response = await fetch('/api/compare-gpx', {
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 120000) // 2 minute timeout
+      
+      const response = await fetch('/api/compare-gpx-data', {
         method: 'POST',
         body: formData,
+        signal: controller.signal
       })
+      
+      clearTimeout(timeoutId)
 
       if (response.ok) {
-        const blob = await response.blob()
-        const imageUrl = URL.createObjectURL(blob)
-        setResultImage(imageUrl)
+        const data = await response.json()
+        setResultData(data)
       } else {
         // Try to get error details from response
         try {
@@ -123,7 +157,13 @@ function GpxCompareTool() {
       }
     } catch (error) {
       console.error('Error:', error)
-      alert(t('gpxCompare.errors.connectionError'))
+      if (error.name === 'AbortError') {
+        alert(t('gpxCompare.errors.timeoutError'))
+      } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+        alert(t('gpxCompare.errors.networkError'))
+      } else {
+        alert(t('gpxCompare.errors.connectionError'))
+      }
     } finally {
       setLoading(false)
     }
@@ -133,13 +173,12 @@ function GpxCompareTool() {
     setMapType(newMapType)
     // Save to localStorage
     localStorage.setItem('gpx-map-type', newMapType)
-    // Clear result image to encourage re-comparison with new map type
-    setResultImage(null)
+    // No need to clear result data as maps can switch backgrounds dynamically
   }
 
   const clearFiles = () => {
     setFiles({ file1: null, file2: null })
-    setResultImage(null)
+    setResultData(null)
   }
 
   return (
@@ -194,7 +233,7 @@ function GpxCompareTool() {
         <div>
           <h3>{t('gpxCompare.firstFile')}</h3>
           <div 
-            className={`file-upload-area ${dragActive.file1 ? 'drag-active' : ''}`}
+            className={`file-upload-area ${dragActive.file1 ? 'drag-active' : ''} ${files.file1 ? 'file-uploaded' : ''}`}
             onDrop={(e) => handleDrop('file1', e)}
             onDragOver={handleDragOver}
             onDragEnter={(e) => handleDragEnter('file1', e)}
@@ -208,24 +247,34 @@ function GpxCompareTool() {
               style={{ display: 'none' }}
               id="file1-input"
             />
-            <label htmlFor="file1-input" className="upload-button">
-              {t('gpxCompare.chooseFile')}
-            </label>
-            <p>{t('gpxCompare.dragDrop')}</p>
+            {files.file1 ? (
+              <>
+                <div className="uploaded-file-info">
+                  <div className="file-icon">📁</div>
+                  <div className="file-details">
+                    <div className="file-name">{files.file1.name}</div>
+                    <div className="file-size">{(files.file1.size / 1024).toFixed(1)} KB</div>
+                  </div>
+                </div>
+                <label htmlFor="file1-input" className="upload-button replace-button">
+                  {t('gpxCompare.replaceFile')}
+                </label>
+              </>
+            ) : (
+              <>
+                <label htmlFor="file1-input" className="upload-button">
+                  {t('gpxCompare.chooseFile')}
+                </label>
+                <p>{t('gpxCompare.dragDrop')}</p>
+              </>
+            )}
           </div>
-          {files.file1 && (
-            <div className="file-info">
-              <strong>{t('gpxCompare.selected')}</strong> {files.file1.name}
-              <br />
-              <strong>{t('gpxCompare.size')}</strong> {(files.file1.size / 1024).toFixed(1)} KB
-            </div>
-          )}
         </div>
 
         <div>
           <h3>{t('gpxCompare.secondFile')}</h3>
           <div 
-            className={`file-upload-area ${dragActive.file2 ? 'drag-active' : ''}`}
+            className={`file-upload-area ${dragActive.file2 ? 'drag-active' : ''} ${files.file2 ? 'file-uploaded' : ''}`}
             onDrop={(e) => handleDrop('file2', e)}
             onDragOver={handleDragOver}
             onDragEnter={(e) => handleDragEnter('file2', e)}
@@ -239,18 +288,28 @@ function GpxCompareTool() {
               style={{ display: 'none' }}
               id="file2-input"
             />
-            <label htmlFor="file2-input" className="upload-button">
-              {t('gpxCompare.chooseFile')}
-            </label>
-            <p>{t('gpxCompare.dragDrop')}</p>
+            {files.file2 ? (
+              <>
+                <div className="uploaded-file-info">
+                  <div className="file-icon">📁</div>
+                  <div className="file-details">
+                    <div className="file-name">{files.file2.name}</div>
+                    <div className="file-size">{(files.file2.size / 1024).toFixed(1)} KB</div>
+                  </div>
+                </div>
+                <label htmlFor="file2-input" className="upload-button replace-button">
+                  {t('gpxCompare.replaceFile')}
+                </label>
+              </>
+            ) : (
+              <>
+                <label htmlFor="file2-input" className="upload-button">
+                  {t('gpxCompare.chooseFile')}
+                </label>
+                <p>{t('gpxCompare.dragDrop')}</p>
+              </>
+            )}
           </div>
-          {files.file2 && (
-            <div className="file-info">
-              <strong>{t('gpxCompare.selected')}</strong> {files.file2.name}
-              <br />
-              <strong>{t('gpxCompare.size')}</strong> {(files.file2.size / 1024).toFixed(1)} KB
-            </div>
-          )}
         </div>
       </div>
 
@@ -267,10 +326,16 @@ function GpxCompareTool() {
         </button>
       </div>
 
-      {resultImage && (
+      {resultData && (
         <div ref={resultRef}>
           <h3>{t('gpxCompare.comparisonResult')}</h3>
-          <img src={resultImage} alt="GPX Comparison" className="result-image" />
+          <DualMapView 
+            routeData={resultData}
+            mapType={mapType}
+            showDirections={showDirections}
+            showOverlaps={true}
+          />
+          
         </div>
       )}
     </div>

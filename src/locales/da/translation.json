@@ -15,6 +15,7 @@
     "firstFile": "Første GPX Fil",
     "secondFile": "Anden GPX Fil",
     "chooseFile": "Vælg GPX Fil",
+    "replaceFile": "Erstat Fil",
     "dragDrop": "eller træk og slip en .gpx fil her",
     "selected": "Valgt:",
     "size": "Størrelse:",
@@ -28,8 +29,32 @@
       "onlyGpxFiles": "Vælg venligst en .gpx fil",
       "onlyGpxFilesDrop": "Drop venligst en .gpx fil",
       "processError": "Fejl ved behandling af filer",
-      "connectionError": "Fejl ved forbindelse til server"
-    }
+      "connectionError": "Fejl ved forbindelse til server",
+      "networkError": "Netværksforbindelse tabt. Tjek venligst din internetforbindelse og prøv igen.",
+      "timeoutError": "Anmodningen tog for lang tid at gennemføre. Prøv igen med mindre filer eller tjek din forbindelse."
+    },
+    "warnings": {
+      "filesUploaded": "Du har uploadet filer som vil gå tabt hvis du navigerer væk. Er du sikker på at du vil forlade siden?",
+      "processingInProgress": "Rutesammenligning behandles i øjeblikket. At forlade nu vil annullere operationen. Er du sikker?",
+      "tabSwitch": "Du har uploadet filer i GPX Sammenligning værktøjet. At skifte faner vil miste dit fremskridt. Fortsæt?"
+    },
+    "showDirections": "Vis Retningspile",
+    "individualMaps": "Individuelle Kort",
+    "combinedView": "Kombineret Visning",
+    "detailOverview": "Detalje & Oversigt",
+    "syncMaps": "Synkroniser Kort",
+    "zoomIn": "Zoom Ind",
+    "zoomOut": "Zoom Ud",
+    "fitView": "Tilpas Visning",
+    "totalPoints": "Totale Punkter",
+    "overlapPoints": "Overlap Punkter",
+    "viewMode": "Visningstilstand",
+    "noData": "Ingen rutedata tilgængelig",
+    "only": "Kun",
+    "detailView": "Detaljeret Visning",
+    "overviewMap": "Oversigt",
+    "combinedComparison": "Kombineret Sammenligning",
+    "mapOpacity": "Kort Gennemsigtighed"
   },
   "placeholderTool": {
     "comingSoon": "Dette værktøj kommer snart! Det vil give yderligere funktionalitet til løbere.",
