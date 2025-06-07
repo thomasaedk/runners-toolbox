@@ -2,29 +2,15 @@ name: Deploy to Railway
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
+    container: ghcr.io/railwayapp/cli:latest
+    env:
+      SVC_ID: my-service-id
+      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Install Node.js (required for Railway CLI)
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-
-      - name: Install Railway CLI
-        run: npm install -g railway
-
-      - name: Login to Railway
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-        run: railway login --token $RAILWAY_TOKEN
-
-      - name: Deploy to Railway
-        run: railway up --ci
+      - uses: actions/checkout@v3
+      - run: railway up --service=${{ env.SVC_ID }}
