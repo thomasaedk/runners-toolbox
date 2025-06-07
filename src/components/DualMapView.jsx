@@ -18,6 +18,7 @@ const DualMapView = ({
   const [routeVisibility, setRouteVisibility] = useState({ route1: true, route2: true }) // Route visibility state
   const [showKilometerMarkers, setShowKilometerMarkers] = useState({ route1: true, route2: true }) // Kilometer marker state - enabled by default
   const [isFullscreen, setIsFullscreen] = useState(false) // Fullscreen state
+  const [isMobile, setIsMobile] = useState(false) // Mobile device detection
   
   const map1Ref = useRef()
   const map2Ref = useRef()
@@ -70,6 +71,20 @@ const DualMapView = ({
     })
   }
   
+  // Mobile device detection
+  useEffect(() => {
+    const checkIsMobile = () => {
+      const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) 
+        || window.innerWidth <= 768
+        || (window.ontouchstart !== undefined && window.innerWidth <= 1024)
+      setIsMobile(isMobileDevice)
+    }
+    
+    checkIsMobile()
+    window.addEventListener('resize', checkIsMobile)
+    return () => window.removeEventListener('resize', checkIsMobile)
+  }, [])
+
   // Handle escape key to exit fullscreen
   useEffect(() => {
     const handleEscapeKey = (event) => {
@@ -237,6 +252,39 @@ const DualMapView = ({
               />
               {t('gpxCompare.kmMarkersRoute2')}
             </label>
+          </div>
+          
+          <div className="fullscreen-controls-group">
+            <label className="opacity-control">
+              <span className="opacity-label">{t('gpxCompare.mapOpacity', 'Map Opacity')}</span>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.1"
+                value={mapBackgroundOpacity}
+                onChange={(e) => setMapBackgroundOpacity(parseFloat(e.target.value))}
+                className="opacity-slider"
+              />
+              <span className="opacity-value">{Math.round(mapBackgroundOpacity * 100)}%</span>
+            </label>
+          </div>
+          
+          <div className="fullscreen-controls-group">
+            <div className="map-type-toggle">
+              <button 
+                className={`map-type-button ${mapType === 'satellite' ? 'active' : ''}`}
+                onClick={() => onMapTypeChange && onMapTypeChange('satellite')}
+              >
+                🛰️ {t('gpxCompare.satellite')}
+              </button>
+              <button 
+                className={`map-type-button ${mapType === 'street' ? 'active' : ''}`}
+                onClick={() => onMapTypeChange && onMapTypeChange('street')}
+              >
+                🗺️ {t('gpxCompare.streetMap')}
+              </button>
+            </div>
           </div>
         </div>
 
@@ -518,13 +566,15 @@ const DualMapView = ({
           <div className="map-panel">
             <div className="map-panel-header">
               <h4>{t('gpxCompare.combinedComparison')}</h4>
-              <button
-                className="fullscreen-button"
-                onClick={toggleFullscreen}
-                title={isFullscreen ? t('gpxCompare.exitFullscreen') : t('gpxCompare.enterFullscreen')}
-              >
-                {isFullscreen ? '⊖' : '⊞'}
-              </button>
+              {!isMobile && (
+                <button
+                  className="fullscreen-button"
+                  onClick={toggleFullscreen}
+                  title={isFullscreen ? t('gpxCompare.exitFullscreen') : t('gpxCompare.enterFullscreen')}
+                >
+                  {isFullscreen ? '⊖' : '⊞'}
+                </button>
+              )}
             </div>
             <InteractiveMap
               key={`combined-map-${combinedKey}`}
