@@ -38,6 +38,72 @@ const createArrowIcon = (bearing, color) => {
   })
 }
 
+// Custom kilometer marker icon
+const createKilometerIcon = (kilometer, color) => {
+  const markerHtml = `<div style="background-color: ${color}; width: 28px; height: 28px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 10px;">${kilometer}</div>`
+  
+  return L.divIcon({
+    html: markerHtml,
+    className: 'kilometer-marker',
+    iconSize: [32, 32],
+    iconAnchor: [16, 16],
+    popupAnchor: [0, -16]
+  })
+}
+
+// Calculate distance between two points using Haversine formula
+const calculateDistance = (lat1, lon1, lat2, lon2) => {
+  const R = 6371 // Earth's radius in kilometers
+  const dLat = (lat2 - lat1) * Math.PI / 180
+  const dLon = (lon2 - lon1) * Math.PI / 180
+  const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon/2) * Math.sin(dLon/2)
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
+  return R * c
+}
+
+// Generate kilometer markers for a route
+const generateKilometerMarkers = (points, color) => {
+  if (!points || points.length < 2) return []
+  
+  const markers = []
+  let totalDistance = 0
+  let nextKilometer = 1
+  
+  for (let i = 1; i < points.length; i++) {
+    const segmentDistance = calculateDistance(
+      points[i-1].lat, points[i-1].lon,
+      points[i].lat, points[i].lon
+    )
+    
+    const segmentStart = totalDistance
+    const segmentEnd = totalDistance + segmentDistance
+    
+    // Check if we crossed a kilometer mark in this segment
+    while (nextKilometer <= segmentEnd) {
+      const distanceIntoSegment = nextKilometer - segmentStart
+      const ratio = distanceIntoSegment / segmentDistance
+      
+      // Interpolate position
+      const lat = points[i-1].lat + (points[i].lat - points[i-1].lat) * ratio
+      const lon = points[i-1].lon + (points[i].lon - points[i-1].lon) * ratio
+      
+      markers.push({
+        position: [lat, lon],
+        kilometer: nextKilometer,
+        color: color
+      })
+      
+      nextKilometer++
+    }
+    
+    totalDistance = segmentEnd
+  }
+  
+  return markers
+}
+
 // Component to handle map events and sync
 const MapEventHandler = ({ onViewChange, syncView }) => {
   const map = useMap()
@@ -134,7 +200,8 @@ const InteractiveMap = forwardRef(({
   syncView,
   showDirections = true,
   showOverlaps = true,
-  backgroundOpacity = 0.3
+  backgroundOpacity = 0.3,
+  showKilometerMarkers = { route1: false, route2: false }
 }, ref) => {
   const mapRef = useRef()
   const containerRef = useRef()
@@ -288,7 +355,7 @@ const InteractiveMap = forwardRef(({
         )}
         
         {/* Direction Arrows for Route 1 */}
-        {showDirections && route1 && route1.arrows && route1.arrows.map((arrow, index) => (
+        {(typeof showDirections === 'boolean' ? showDirections : showDirections.route1) && route1 && route1.arrows && route1.arrows.map((arrow, index) => (
           <Marker
             key={`route1-arrow-${index}`}
             position={[arrow.lat, arrow.lon]}
@@ -297,13 +364,45 @@ const InteractiveMap = forwardRef(({
         ))}
         
         {/* Direction Arrows for Route 2 */}
-        {showDirections && route2 && route2.arrows && route2.arrows.map((arrow, index) => (
+        {(typeof showDirections === 'boolean' ? showDirections : showDirections.route2) && route2 && route2.arrows && route2.arrows.map((arrow, index) => (
           <Marker
             key={`route2-arrow-${index}`}
             position={[arrow.lat, arrow.lon]}
             icon={createArrowIcon(arrow.bearing, route2.color)}
           />
         ))}
+        
+        {/* Kilometer Markers for Route 1 */}
+        {showKilometerMarkers.route1 && route1 && route1.points && 
+          generateKilometerMarkers(route1.points, route1.color).map((marker, index) => (
+            <Marker
+              key={`route1-km-${marker.kilometer}`}
+              position={marker.position}
+              icon={createKilometerIcon(marker.kilometer, marker.color)}
+            >
+              <Popup>
+                <strong>{route1.name}</strong><br />
+                Kilometer {marker.kilometer}
+              </Popup>
+            </Marker>
+          ))
+        }
+        
+        {/* Kilometer Markers for Route 2 */}
+        {showKilometerMarkers.route2 && route2 && route2.points && 
+          generateKilometerMarkers(route2.points, route2.color).map((marker, index) => (
+            <Marker
+              key={`route2-km-${marker.kilometer}`}
+              position={marker.position}
+              icon={createKilometerIcon(marker.kilometer, marker.color)}
+            >
+              <Popup>
+                <strong>{route2.name}</strong><br />
+                Kilometer {marker.kilometer}
+              </Popup>
+            </Marker>
+          ))
+        }
         
         {/* Map event handlers */}
         <MapEventHandler onViewChange={onViewChange} syncView={syncView} />

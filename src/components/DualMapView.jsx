@@ -6,7 +6,8 @@ const DualMapView = ({
   routeData, 
   mapType = 'satellite',
   showDirections: propShowDirections = true,
-  showOverlaps = true 
+  showOverlaps = true,
+  onMapTypeChange
 }) => {
   const { t } = useTranslation()
   const [syncEnabled, setSyncEnabled] = useState(false) // Default to disabled
@@ -14,7 +15,9 @@ const DualMapView = ({
   const [layoutMode, setLayoutMode] = useState('combined') // 'individual', 'combined', or 'detail-overview'
   const [combinedKey, setCombinedKey] = useState(0) // Force remount of combined view
   const [mapBackgroundOpacity, setMapBackgroundOpacity] = useState(0.5) // 0 = fully greyed, 1 = normal
-  const [showDirections, setShowDirections] = useState(propShowDirections) // Internal state for directions
+  const [showDirections, setShowDirections] = useState({ route1: false, route2: false }) // Internal state for directions per route - disabled by default
+  const [routeVisibility, setRouteVisibility] = useState({ route1: true, route2: true }) // Route visibility state
+  const [showKilometerMarkers, setShowKilometerMarkers] = useState({ route1: true, route2: true }) // Kilometer marker state - enabled by default
   
   const map1Ref = useRef()
   const map2Ref = useRef()
@@ -41,6 +44,13 @@ const DualMapView = ({
       console.log('Switching to combined view, routeData:', routeData)
     }
     setLayoutMode(newMode)
+  }
+  
+  const toggleRouteVisibility = (routeKey) => {
+    setRouteVisibility(prev => ({
+      ...prev,
+      [routeKey]: !prev[routeKey]
+    }))
   }
   
   const handleZoomIn = () => {
@@ -101,7 +111,7 @@ const DualMapView = ({
     <div className="dual-map-container">
       {/* Map Controls */}
       <div className="map-controls">
-        <div className="control-group">
+        <div className="control-group view-controls">
           <button
             className={`control-button ${layoutMode === 'individual' ? 'active' : ''}`}
             onClick={() => handleLayoutModeChange('individual')}
@@ -116,9 +126,6 @@ const DualMapView = ({
           >
             🗺️
           </button>
-        </div>
-        
-        <div className="control-group">
           <button
             className={`control-button ${syncEnabled ? 'active' : ''}`}
             onClick={() => setSyncEnabled(!syncEnabled)}
@@ -133,10 +140,37 @@ const DualMapView = ({
           <label className="toggle-control">
             <input
               type="checkbox"
-              checked={showDirections}
-              onChange={(e) => setShowDirections(e.target.checked)}
+              checked={showDirections.route1}
+              onChange={(e) => setShowDirections(prev => ({ ...prev, route1: e.target.checked }))}
             />
-            {t('gpxCompare.showDirections')}
+            {t('gpxCompare.showDirectionsRoute1')}
+          </label>
+          <label className="toggle-control">
+            <input
+              type="checkbox"
+              checked={showDirections.route2}
+              onChange={(e) => setShowDirections(prev => ({ ...prev, route2: e.target.checked }))}
+            />
+            {t('gpxCompare.showDirectionsRoute2')}
+          </label>
+        </div>
+        
+        <div className="control-group">
+          <label className="toggle-control">
+            <input
+              type="checkbox"
+              checked={showKilometerMarkers.route1}
+              onChange={(e) => setShowKilometerMarkers(prev => ({ ...prev, route1: e.target.checked }))}
+            />
+            {t('gpxCompare.kmMarkersRoute1')}
+          </label>
+          <label className="toggle-control">
+            <input
+              type="checkbox"
+              checked={showKilometerMarkers.route2}
+              onChange={(e) => setShowKilometerMarkers(prev => ({ ...prev, route2: e.target.checked }))}
+            />
+            {t('gpxCompare.kmMarkersRoute2')}
           </label>
         </div>
         
@@ -157,21 +191,60 @@ const DualMapView = ({
         </div>
       </div>
       
+      {/* Map Background Controls */}
+      <div className="map-background-controls">
+        <h3>{t('gpxCompare.mapBackground')}</h3>
+        <div className="map-type-toggle">
+          <button 
+            className={`map-type-button ${mapType === 'satellite' ? 'active' : ''}`}
+            onClick={() => onMapTypeChange && onMapTypeChange('satellite')}
+          >
+            🛰️ {t('gpxCompare.satellite')}
+          </button>
+          <button 
+            className={`map-type-button ${mapType === 'street' ? 'active' : ''}`}
+            onClick={() => onMapTypeChange && onMapTypeChange('street')}
+          >
+            🗺️ {t('gpxCompare.streetMap')}
+          </button>
+        </div>
+      </div>
+      
       {/* Route Legend */}
       <div className="route-legend">
-        <div className="route-legend-item">
+        <div 
+          className={`route-legend-item ${!routeVisibility.route1 ? 'hidden-route' : ''}`}
+          onClick={() => toggleRouteVisibility('route1')}
+          title={`${t('gpxCompare.clickToToggle')} ${routeData.route1.name}`}
+        >
           <div 
             className="route-color-indicator" 
-            style={{ backgroundColor: routeData.route1.color }}
+            style={{ 
+              backgroundColor: routeData.route1.color,
+              opacity: routeVisibility.route1 ? 1 : 0.3
+            }}
           ></div>
           <span className="route-name">{routeData.route1.name}</span>
+          <span className="visibility-indicator">
+            {routeVisibility.route1 ? '👁️' : '🚫'}
+          </span>
         </div>
-        <div className="route-legend-item">
+        <div 
+          className={`route-legend-item ${!routeVisibility.route2 ? 'hidden-route' : ''}`}
+          onClick={() => toggleRouteVisibility('route2')}
+          title={`${t('gpxCompare.clickToToggle')} ${routeData.route2.name}`}
+        >
           <div 
             className="route-color-indicator" 
-            style={{ backgroundColor: routeData.route2.color }}
+            style={{ 
+              backgroundColor: routeData.route2.color,
+              opacity: routeVisibility.route2 ? 1 : 0.3
+            }}
           ></div>
           <span className="route-name">{routeData.route2.name}</span>
+          <span className="visibility-indicator">
+            {routeVisibility.route2 ? '👁️' : '🚫'}
+          </span>
         </div>
       </div>
       
@@ -188,7 +261,7 @@ const DualMapView = ({
                 key="individual-map1"
                 ref={map1Ref}
                 routeData={{
-                  route1: routeData.route1,
+                  route1: routeVisibility.route1 ? routeData.route1 : null,
                   route2: null, // Don't show route2
                   bounds: routeData.bounds
                 }}
@@ -198,6 +271,7 @@ const DualMapView = ({
                 showDirections={showDirections}
                 showOverlaps={false}
                 backgroundOpacity={mapBackgroundOpacity}
+                showKilometerMarkers={showKilometerMarkers}
               />
             </div>
             
@@ -211,7 +285,7 @@ const DualMapView = ({
                 ref={map2Ref}
                 routeData={{
                   route1: null, // Don't show route1
-                  route2: routeData.route2,
+                  route2: routeVisibility.route2 ? routeData.route2 : null,
                   bounds: routeData.bounds
                 }}
                 mapType={mapType}
@@ -220,6 +294,7 @@ const DualMapView = ({
                 showDirections={showDirections}
                 showOverlaps={false}
                 backgroundOpacity={mapBackgroundOpacity}
+                showKilometerMarkers={showKilometerMarkers}
               />
             </div>
           </>
@@ -233,13 +308,19 @@ const DualMapView = ({
               <InteractiveMap
                 key="detail-map"
                 ref={map1Ref}
-                routeData={routeData}
+                routeData={{
+                  route1: routeVisibility.route1 ? routeData.route1 : null,
+                  route2: routeVisibility.route2 ? routeData.route2 : null,
+                  bounds: routeData.bounds,
+                  overlaps: routeData.overlaps
+                }}
                 mapType={mapType}
                 onViewChange={null} // No sync for detail view
                 syncView={null}
                 showDirections={showDirections}
                 showOverlaps={showOverlaps}
                 backgroundOpacity={mapBackgroundOpacity}
+                showKilometerMarkers={showKilometerMarkers}
               />
             </div>
             
@@ -254,23 +335,24 @@ const DualMapView = ({
                 routeData={{
                   ...routeData,
                   // Simplify routes for overview (every 5th point)
-                  route1: {
+                  route1: routeVisibility.route1 ? {
                     ...routeData.route1,
                     points: routeData.route1.points.filter((_, i) => i % 5 === 0),
                     arrows: [] // No arrows in overview
-                  },
-                  route2: {
+                  } : null,
+                  route2: routeVisibility.route2 ? {
                     ...routeData.route2,
                     points: routeData.route2.points.filter((_, i) => i % 5 === 0),
                     arrows: [] // No arrows in overview
-                  }
+                  } : null
                 }}
                 mapType={mapType}
                 onViewChange={null}
                 syncView={null}
-                showDirections={false}
+                showDirections={{ route1: false, route2: false }}
                 showOverlaps={false}
                 backgroundOpacity={mapBackgroundOpacity}
+                showKilometerMarkers={{ route1: false, route2: false }}
               />
             </div>
           </>
@@ -283,13 +365,19 @@ const DualMapView = ({
             <InteractiveMap
               key={`combined-map-${combinedKey}`}
               ref={map1Ref}
-              routeData={routeData}
+              routeData={{
+                route1: routeVisibility.route1 ? routeData.route1 : null,
+                route2: routeVisibility.route2 ? routeData.route2 : null,
+                bounds: routeData.bounds,
+                overlaps: routeData.overlaps
+              }}
               mapType={mapType}
               onViewChange={null} // No sync needed for single map
               syncView={null}
               showDirections={showDirections}
               showOverlaps={showOverlaps}
               backgroundOpacity={mapBackgroundOpacity}
+              showKilometerMarkers={showKilometerMarkers}
             />
           </div>
         )}

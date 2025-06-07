@@ -210,25 +210,6 @@ function GpxCompareTool({ onStateChange }) {
         </a>
       </div>
       
-      {/* Map Type Toggle */}
-      <div style={{ marginBottom: '2rem' }}>
-        <h3>{t('gpxCompare.mapBackground')}</h3>
-        <div className="map-type-toggle">
-          <button 
-            className={`map-type-button ${mapType === 'satellite' ? 'active' : ''}`}
-            onClick={() => handleMapTypeChange('satellite')}
-          >
-            🛰️ {t('gpxCompare.satellite')}
-          </button>
-          <button 
-            className={`map-type-button ${mapType === 'street' ? 'active' : ''}`}
-            onClick={() => handleMapTypeChange('street')}
-          >
-            🗺️ {t('gpxCompare.streetMap')}
-          </button>
-        </div>
-      </div>
-      
       <div className="file-upload-grid">
         <div>
           <h3>{t('gpxCompare.firstFile')}</h3>
@@ -334,6 +315,7 @@ function GpxCompareTool({ onStateChange }) {
             mapType={mapType}
             showDirections={showDirections}
             showOverlaps={true}
+            onMapTypeChange={handleMapTypeChange}
           />
           
         </div>
