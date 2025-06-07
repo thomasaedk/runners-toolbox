@@ -59,7 +59,9 @@
     "kmMarkersRoute1": "KM Markers (Route 1)",
     "kmMarkersRoute2": "KM Markers (Route 2)",
     "showDirectionsRoute1": "Arrows (Route 1)",
-    "showDirectionsRoute2": "Arrows (Route 2)"
+    "showDirectionsRoute2": "Arrows (Route 2)",
+    "enterFullscreen": "Enter fullscreen mode",
+    "exitFullscreen": "Exit fullscreen mode"
   },
   "placeholderTool": {
     "comingSoon": "This tool is coming soon! It will provide additional functionality for runners.",

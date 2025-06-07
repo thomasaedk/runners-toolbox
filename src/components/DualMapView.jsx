@@ -1,11 +1,10 @@
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import InteractiveMap from './InteractiveMap'
 
 const DualMapView = ({ 
   routeData, 
   mapType = 'satellite',
-  showDirections: propShowDirections = true,
   showOverlaps = true,
   onMapTypeChange
 }) => {
@@ -18,6 +17,7 @@ const DualMapView = ({
   const [showDirections, setShowDirections] = useState({ route1: false, route2: false }) // Internal state for directions per route - disabled by default
   const [routeVisibility, setRouteVisibility] = useState({ route1: true, route2: true }) // Route visibility state
   const [showKilometerMarkers, setShowKilometerMarkers] = useState({ route1: true, route2: true }) // Kilometer marker state - enabled by default
+  const [isFullscreen, setIsFullscreen] = useState(false) // Fullscreen state
   
   const map1Ref = useRef()
   const map2Ref = useRef()
@@ -41,7 +41,6 @@ const DualMapView = ({
   const handleLayoutModeChange = (newMode) => {
     if (newMode === 'combined') {
       setCombinedKey(prev => prev + 1) // Force remount when switching to combined
-      console.log('Switching to combined view, routeData:', routeData)
     }
     setLayoutMode(newMode)
   }
@@ -52,6 +51,68 @@ const DualMapView = ({
       [routeKey]: !prev[routeKey]
     }))
   }
+  
+  const toggleFullscreen = () => {
+    setIsFullscreen(prev => {
+      const newFullscreenState = !prev
+      
+      // Force map resize after state change
+      setTimeout(() => {
+        if (map1Ref.current) {
+          const map = map1Ref.current.getMap()
+          if (map) {
+            map.invalidateSize(true)
+          }
+        }
+      }, 100)
+      
+      return newFullscreenState
+    })
+  }
+  
+  // Handle escape key to exit fullscreen
+  useEffect(() => {
+    const handleEscapeKey = (event) => {
+      if (event.key === 'Escape' && isFullscreen) {
+        setIsFullscreen(false)
+      }
+    }
+    
+    document.addEventListener('keydown', handleEscapeKey)
+    return () => document.removeEventListener('keydown', handleEscapeKey)
+  }, [isFullscreen])
+  
+  // Force map resize when entering/exiting fullscreen
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (map1Ref.current) {
+        const map = map1Ref.current.getMap()
+        if (map) {
+          // Force map to recalculate its size and positioning
+          map.invalidateSize(true)
+          
+          // Re-enable dragging and other interactions if they were disabled
+          if (isFullscreen) {
+            map.dragging.enable()
+            map.scrollWheelZoom.enable()
+            map.doubleClickZoom.enable()
+            map.touchZoom.enable()
+          }
+          
+          // Trigger a bounds fit to ensure proper positioning
+          if (routeData && routeData.bounds) {
+            const bounds = [
+              [routeData.bounds.south, routeData.bounds.west],
+              [routeData.bounds.north, routeData.bounds.east]
+            ]
+            map.fitBounds(bounds, { padding: [20, 20] })
+          }
+        }
+      }
+    }, 300) // Increased timeout to ensure CSS changes are applied
+    
+    return () => clearTimeout(timer)
+  }, [isFullscreen, routeData])
   
   const handleZoomIn = () => {
     if (map1Ref.current && map2Ref.current) {
@@ -107,8 +168,104 @@ const DualMapView = ({
   }
   
   
+  if (isFullscreen) {
+    return (
+      <div className="dual-map-container fullscreen">
+        {/* Fullscreen Exit Button */}
+        <button 
+          className="fullscreen-exit-button"
+          onClick={toggleFullscreen}
+          title={t('gpxCompare.exitFullscreen')}
+        >
+          ✕
+        </button>
+        
+        {/* Compact Controls for Fullscreen */}
+        <div className="fullscreen-controls">
+          <div className="fullscreen-controls-group">
+            <label className="toggle-control">
+              <input
+                type="checkbox"
+                checked={routeVisibility.route1}
+                onChange={() => toggleRouteVisibility('route1')}
+              />
+              <span style={{ color: routeData?.route1?.color }}>{routeData?.route1?.name}</span>
+            </label>
+            <label className="toggle-control">
+              <input
+                type="checkbox"
+                checked={routeVisibility.route2}
+                onChange={() => toggleRouteVisibility('route2')}
+              />
+              <span style={{ color: routeData?.route2?.color }}>{routeData?.route2?.name}</span>
+            </label>
+          </div>
+          
+          <div className="fullscreen-controls-group">
+            <label className="toggle-control">
+              <input
+                type="checkbox"
+                checked={showDirections.route1}
+                onChange={(e) => setShowDirections(prev => ({ ...prev, route1: e.target.checked }))}
+              />
+              {t('gpxCompare.showDirectionsRoute1')}
+            </label>
+            <label className="toggle-control">
+              <input
+                type="checkbox"
+                checked={showDirections.route2}
+                onChange={(e) => setShowDirections(prev => ({ ...prev, route2: e.target.checked }))}
+              />
+              {t('gpxCompare.showDirectionsRoute2')}
+            </label>
+          </div>
+          
+          <div className="fullscreen-controls-group">
+            <label className="toggle-control">
+              <input
+                type="checkbox"
+                checked={showKilometerMarkers.route1}
+                onChange={(e) => setShowKilometerMarkers(prev => ({ ...prev, route1: e.target.checked }))}
+              />
+              {t('gpxCompare.kmMarkersRoute1')}
+            </label>
+            <label className="toggle-control">
+              <input
+                type="checkbox"
+                checked={showKilometerMarkers.route2}
+                onChange={(e) => setShowKilometerMarkers(prev => ({ ...prev, route2: e.target.checked }))}
+              />
+              {t('gpxCompare.kmMarkersRoute2')}
+            </label>
+          </div>
+        </div>
+
+        {/* Fullscreen Map */}
+        <div className="fullscreen-map">
+          <InteractiveMap
+            key={`fullscreen-map-${combinedKey}`}
+            ref={map1Ref}
+            routeData={{
+              route1: routeVisibility.route1 ? routeData.route1 : null,
+              route2: routeVisibility.route2 ? routeData.route2 : null,
+              bounds: routeData.bounds,
+              overlaps: routeData.overlaps
+            }}
+            mapType={mapType}
+            onViewChange={null}
+            syncView={null}
+            showDirections={showDirections}
+            showOverlaps={showOverlaps}
+            backgroundOpacity={mapBackgroundOpacity}
+            showKilometerMarkers={showKilometerMarkers}
+          />
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div className="dual-map-container">
+    <div className={`dual-map-container ${isFullscreen ? 'fullscreen' : ''}`}>
       {/* Map Controls */}
       <div className="map-controls">
         <div className="control-group view-controls">
@@ -361,6 +518,13 @@ const DualMapView = ({
           <div className="map-panel">
             <div className="map-panel-header">
               <h4>{t('gpxCompare.combinedComparison')}</h4>
+              <button
+                className="fullscreen-button"
+                onClick={toggleFullscreen}
+                title={isFullscreen ? t('gpxCompare.exitFullscreen') : t('gpxCompare.enterFullscreen')}
+              >
+                {isFullscreen ? '⊖' : '⊞'}
+              </button>
             </div>
             <InteractiveMap
               key={`combined-map-${combinedKey}`}

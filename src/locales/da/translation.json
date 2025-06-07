@@ -59,7 +59,9 @@
     "kmMarkersRoute1": "KM Markører (Rute 1)",
     "kmMarkersRoute2": "KM Markører (Rute 2)",
     "showDirectionsRoute1": "Pile (Rute 1)",
-    "showDirectionsRoute2": "Pile (Rute 2)"
+    "showDirectionsRoute2": "Pile (Rute 2)",
+    "enterFullscreen": "Gå til fuldskærm",
+    "exitFullscreen": "Forlad fuldskærm"
   },
   "placeholderTool": {
     "comingSoon": "Dette værktøj kommer snart! Det vil give yderligere funktionalitet til løbere.",

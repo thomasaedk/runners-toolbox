@@ -6,7 +6,6 @@ function GpxCompareTool({ onStateChange }) {
   const [files, setFiles] = useState({ file1: null, file2: null })
   const [resultData, setResultData] = useState(null)
   const [loading, setLoading] = useState(false)
-  const [showDirections, setShowDirections] = useState(true)
   const [dragActive, setDragActive] = useState({ file1: false, file2: false })
   const [mapType, setMapType] = useState(() => {
     // Load map type preference from localStorage
@@ -67,19 +66,16 @@ function GpxCompareTool({ onStateChange }) {
   const handleDrop = (fileNumber, event) => {
     event.preventDefault()
     event.stopPropagation()
-    // console.log('Drop event for', fileNumber, event.dataTransfer.files)
     
     // Reset drag active state
     setDragActive(prev => ({ ...prev, [fileNumber]: false }))
     
     // Check if there are files in the drop event
     if (!event.dataTransfer.files || event.dataTransfer.files.length === 0) {
-      // console.log('No files in drop event')
       return // No files dropped, do nothing
     }
     
     const file = event.dataTransfer.files[0]
-    // console.log('File dropped:', file.name, file.type)
     
     // Check both file extension and MIME type
     const isValidGpx = (file.name && file.name.endsWith('.gpx')) || 
@@ -88,10 +84,8 @@ function GpxCompareTool({ onStateChange }) {
                        file.type === 'text/xml'
     
     if (file && isValidGpx) {
-      // console.log('Valid GPX file, setting', fileNumber)
       setFiles(prev => ({ ...prev, [fileNumber]: file }))
     } else {
-      console.log('Invalid file type. Name:', file.name, 'Type:', file.type)
       alert(t('gpxCompare.errors.onlyGpxFilesDrop'))
     }
   }
@@ -106,14 +100,12 @@ function GpxCompareTool({ onStateChange }) {
   const handleDragEnter = (fileNumber, event) => {
     event.preventDefault()
     event.stopPropagation()
-    // console.log('Drag enter', fileNumber)
     setDragActive(prev => ({ ...prev, [fileNumber]: true }))
   }
 
   const handleDragLeave = (fileNumber, event) => {
     event.preventDefault()
     event.stopPropagation()
-    // console.log('Drag leave', fileNumber)
     setDragActive(prev => ({ ...prev, [fileNumber]: false }))
   }
 
@@ -313,7 +305,6 @@ function GpxCompareTool({ onStateChange }) {
           <DualMapView 
             routeData={resultData}
             mapType={mapType}
-            showDirections={showDirections}
             showOverlaps={true}
             onMapTypeChange={handleMapTypeChange}
           />

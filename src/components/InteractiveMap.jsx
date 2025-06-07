@@ -147,9 +147,7 @@ const MapEventHandler = ({ onViewChange, syncView }) => {
   useEffect(() => {
     const timer = setTimeout(() => {
       const container = map.getContainer()
-      console.log('Map container size:', container.offsetWidth, 'x', container.offsetHeight)
       map.invalidateSize(true)
-      console.log('Map invalidated, current zoom:', map.getZoom())
     }, 150)
     return () => clearTimeout(timer)
   }, [map])
@@ -158,7 +156,6 @@ const MapEventHandler = ({ onViewChange, syncView }) => {
   useEffect(() => {
     const timer = setTimeout(() => {
       map.invalidateSize(true)
-      console.log('Second invalidation completed')
     }, 500)
     return () => clearTimeout(timer)
   }, [map])
@@ -198,7 +195,7 @@ const InteractiveMap = forwardRef(({
   mapType = 'satellite', 
   onViewChange, 
   syncView,
-  showDirections = true,
+  showDirections = { route1: true, route2: true },
   showOverlaps = true,
   backgroundOpacity = 0.3,
   showKilometerMarkers = { route1: false, route2: false }
@@ -245,13 +242,6 @@ const InteractiveMap = forwardRef(({
   const route1Points = route1 ? route1.points.map(p => [p.lat, p.lon]) : []
   const route2Points = route2 ? route2.points.map(p => [p.lat, p.lon]) : []
   
-  console.log('InteractiveMap rendering:', {
-    hasRoute1: !!route1,
-    hasRoute2: !!route2,
-    route1Points: route1Points.length,
-    route2Points: route2Points.length,
-    bounds
-  })
   
   // Calculate center point
   const center = bounds ? [
