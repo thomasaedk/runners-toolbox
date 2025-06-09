@@ -1376,36 +1376,6 @@ body:has(.dual-map-container.fullscreen) .app {
 }
 
 
-/* Custom attribution for fullscreen mode */
-.custom-attribution-fullscreen {
-  position: absolute !important;
-  bottom: 0 !important;
-  right: 0 !important;
-  z-index: 10002 !important;
-  background: rgba(255, 255, 255, 0.9) !important;
-  backdrop-filter: blur(5px) !important;
-  border: 1px solid rgba(0, 0, 0, 0.1) !important;
-  border-radius: 4px !important;
-  padding: 4px 8px !important;
-  font-size: 12px !important;
-  line-height: 1.4 !important;
-  color: #333 !important;
-  pointer-events: auto !important;
-  display: block !important;
-  visibility: visible !important;
-  opacity: 1 !important;
-}
-
-.custom-attribution-fullscreen a {
-  color: #0078a8 !important;
-  text-decoration: none !important;
-}
-
-.custom-attribution-fullscreen a:hover {
-  color: #005a80 !important;
-  text-decoration: underline !important;
-}
-
 /* Reset any inherited positioning for fullscreen map components */
 .dual-map-container.fullscreen * {
   box-sizing: border-box;
