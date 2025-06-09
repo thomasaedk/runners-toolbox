@@ -15,7 +15,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with:
-          # Fetch full history. Alternatively, use fetch-depth: 1 and fetch base commit:
+          # Fetch full history. For a more efficient solution, use 'fetch-depth: 1' and fetch the base commit:
           # git fetch origin ${{ github.event.before }} --depth=1
           fetch-depth: 0
       - id: cf
@@ -34,6 +34,8 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - run: railway up --service=${{ env.SERVICE_ID }} --ci
+      - name: Add to summary
+        run: echo "🚀 Deployment ran because non-Markdown files were changed." >> $GITHUB_STEP_SUMMARY
 
   skip-deploy:
     needs: check-changes
@@ -41,3 +43,5 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: echo "Only Markdown files were changed. Skipping deployment."
+      - name: Add to summary
+        run: echo "✅ Deployment was skipped because only Markdown files were changed." >> $GITHUB_STEP_SUMMARY
