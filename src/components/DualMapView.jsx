@@ -113,7 +113,7 @@ const DualMapView = ({
             map.doubleClickZoom.enable()
             map.touchZoom.enable()
             
-            // Force Leaflet controls to be visible in fullscreen
+            // Workaround to force Leaflet attribution to be visible in fullscreen
             setTimeout(() => {
               const controlContainer = map.getContainer().querySelector('.leaflet-control-container')
               const mapContainer = map.getContainer()
@@ -162,14 +162,9 @@ const DualMapView = ({
               }
             }, 100)
           } else {
-            // Cleanup when exiting fullscreen
-            const fullscreenMapDiv = document.querySelector('.fullscreen-map')
-            if (fullscreenMapDiv) {
-              const customAttribution = fullscreenMapDiv.querySelector('.custom-attribution-fullscreen')
-              if (customAttribution) {
-                customAttribution.remove()
-              }
-            }
+            // Cleanup when exiting fullscreen - search more broadly for custom attribution divs
+            const customAttributions = document.querySelectorAll('.custom-attribution-fullscreen')
+            customAttributions.forEach(attr => attr.remove())
             
             // Restore original attribution visibility
             if (map1Ref.current) {
