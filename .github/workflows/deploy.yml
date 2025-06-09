@@ -35,7 +35,11 @@ jobs:
       - uses: actions/checkout@v3
       - run: railway up --service=${{ env.SERVICE_ID }} --ci
       - name: Add to summary
-        run: echo "🚀 Deployment ran because non-Markdown files were changed." >> $GITHUB_STEP_SUMMARY
+        run: |
+          {
+            echo "🚀 Deployment ran because non-Markdown files were changed."
+            echo "🌐 The application is available at: [https://runners-toolbox.up.railway.app/](https://runners-toolbox.up.railway.app/)"
+          } >> $GITHUB_STEP_SUMMARY
 
   skip-deploy:
     needs: check-changes
