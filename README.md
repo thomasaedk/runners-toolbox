@@ -2,7 +2,7 @@
 
 A web application providing essential tools for runners, including GPX file comparison and route analysis.
 
-**🏃 Available at**: [https://runners-toolbox.onrender.com/](https://runners-toolbox.onrender.com/)
+**🏃 Available at**: [https://runners-toolbox.up.railway.app/](https://runners-toolbox.up.railway.app/)
 
 ## Features
 
