@@ -1,3 +1,6 @@
+# This workflow deploys the webapp to Railway on pushes to main.
+# Markdown file changes alone don't trigger a deployment.
+
 name: Deploy to Railway
 
 on:
@@ -5,7 +8,24 @@ on:
     branches: [main]
 
 jobs:
+  check-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      non_md_changed: ${{ steps.cf.outputs.other_changed_files }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          # Fetch full history. Alternatively, use fetch-depth: 1 and fetch base commit:
+          # git fetch origin ${{ github.event.before }} --depth=1
+          fetch-depth: 0
+      - id: cf
+        uses: tj-actions/changed-files@v46.0.5
+        with:
+          files: '**/*.md'
+
   deploy:
+    needs: check-changes
+    if: needs.check-changes.outputs.non_md_changed != ''
     runs-on: ubuntu-latest
     container: ghcr.io/railwayapp/cli:latest
     env:
@@ -14,3 +34,10 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - run: railway up --service=${{ env.SERVICE_ID }} --ci
+
+  skip-deploy:
+    needs: check-changes
+    if: needs.check-changes.outputs.non_md_changed == ''
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Only Markdown files were changed. Skipping deployment."
