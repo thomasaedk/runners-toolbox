@@ -1283,7 +1283,7 @@ body:has(.dual-map-container.fullscreen) .app {
 .fullscreen-exit-button {
   position: absolute;
   top: 1rem;
-  right: 1rem;
+  right: 4rem;
   background: rgba(0, 0, 0, 0.7);
   border: 1px solid rgba(255, 255, 255, 0.3);
   color: white;
@@ -1291,7 +1291,7 @@ body:has(.dual-map-container.fullscreen) .app {
   border-radius: 50%;
   cursor: pointer;
   font-size: 1.5rem;
-  z-index: 10000;
+  z-index: 9999;
   transition: all 0.3s ease;
   width: 3rem;
   height: 3rem;
@@ -1375,26 +1375,43 @@ body:has(.dual-map-container.fullscreen) .app {
   touch-action: none !important;
 }
 
+
+/* Custom attribution for fullscreen mode */
+.custom-attribution-fullscreen {
+  position: absolute !important;
+  bottom: 0 !important;
+  right: 0 !important;
+  z-index: 10002 !important;
+  background: rgba(255, 255, 255, 0.9) !important;
+  backdrop-filter: blur(5px) !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  border-radius: 4px !important;
+  padding: 4px 8px !important;
+  font-size: 12px !important;
+  line-height: 1.4 !important;
+  color: #333 !important;
+  pointer-events: auto !important;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+.custom-attribution-fullscreen a {
+  color: #0078a8 !important;
+  text-decoration: none !important;
+}
+
+.custom-attribution-fullscreen a:hover {
+  color: #005a80 !important;
+  text-decoration: underline !important;
+}
+
 /* Reset any inherited positioning for fullscreen map components */
 .dual-map-container.fullscreen * {
   box-sizing: border-box;
 }
 
-.dual-map-container.fullscreen .leaflet-control-container {
-  position: absolute !important;
-}
 
-.dual-map-container.fullscreen .leaflet-tile-pane {
-  /* Let Leaflet handle tile pane positioning for proper map functionality */
-}
-
-.dual-map-container.fullscreen .leaflet-map-pane {
-  /* Let Leaflet handle map pane positioning for proper dragging */
-}
-
-.dual-map-container.fullscreen .leaflet-proxy {
-  /* Let Leaflet handle proxy positioning */
-}
 
 /* Mobile responsive styles for fullscreen */
 @media (max-width: 768px) {

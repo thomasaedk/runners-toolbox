@@ -112,6 +112,78 @@ const DualMapView = ({
             map.scrollWheelZoom.enable()
             map.doubleClickZoom.enable()
             map.touchZoom.enable()
+            
+            // Force Leaflet controls to be visible in fullscreen
+            setTimeout(() => {
+              const controlContainer = map.getContainer().querySelector('.leaflet-control-container')
+              const mapContainer = map.getContainer()
+              
+              if (controlContainer && mapContainer) {
+                // Find attribution control
+                const attribution = controlContainer.querySelector('.leaflet-control-attribution')
+                if (attribution) {
+                  // Hide the original attribution to avoid duplicates
+                  attribution.style.display = 'none'
+                  
+                  // Create a new attribution container positioned relative to the map container
+                  const fullscreenMapDiv = mapContainer.closest('.fullscreen-map')
+                  if (fullscreenMapDiv) {
+                    // Check if we already created a custom attribution
+                    let customAttribution = fullscreenMapDiv.querySelector('.custom-attribution-fullscreen')
+                    
+                    if (!customAttribution) {
+                      // Create new attribution div positioned relative to fullscreen map
+                      customAttribution = document.createElement('div')
+                      customAttribution.className = 'custom-attribution-fullscreen'
+                      customAttribution.innerHTML = attribution.innerHTML
+                      
+                      // Style the custom attribution
+                      customAttribution.style.position = 'absolute'
+                      customAttribution.style.bottom = '0'
+                      customAttribution.style.right = '0'
+                      customAttribution.style.zIndex = '10002'
+                      customAttribution.style.background = 'rgba(255, 255, 255, 0.9)'
+                      customAttribution.style.border = '1px solid rgba(0, 0, 0, 0.1)'
+                      customAttribution.style.borderRadius = '4px'
+                      customAttribution.style.padding = '4px 8px'
+                      customAttribution.style.pointerEvents = 'auto'
+                      customAttribution.style.color = '#333'
+                      customAttribution.style.fontSize = '12px'
+                      customAttribution.style.lineHeight = '1.4'
+                      customAttribution.style.display = 'block'
+                      customAttribution.style.visibility = 'visible'
+                      customAttribution.style.opacity = '1'
+                      
+                      // Add to fullscreen map container
+                      fullscreenMapDiv.appendChild(customAttribution)
+                    }
+                  }
+                }
+              }
+            }, 100)
+          } else {
+            // Cleanup when exiting fullscreen
+            const fullscreenMapDiv = document.querySelector('.fullscreen-map')
+            if (fullscreenMapDiv) {
+              const customAttribution = fullscreenMapDiv.querySelector('.custom-attribution-fullscreen')
+              if (customAttribution) {
+                customAttribution.remove()
+              }
+            }
+            
+            // Restore original attribution visibility
+            if (map1Ref.current) {
+              const map = map1Ref.current.getMap()
+              if (map) {
+                const controlContainer = map.getContainer().querySelector('.leaflet-control-container')
+                if (controlContainer) {
+                  const attribution = controlContainer.querySelector('.leaflet-control-attribution')
+                  if (attribution) {
+                    attribution.style.display = 'block'
+                  }
+                }
+              }
+            }
           }
           
           // Trigger a bounds fit to ensure proper positioning
