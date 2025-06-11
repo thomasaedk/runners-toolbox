@@ -181,25 +181,33 @@ function GpxCompareTool({ onStateChange }) {
       {/* Example GPX Files */}
       <div className="example-files">
         <span className="example-files-label">{t('gpxCompare.tryWithExamples')}</span>
-        <a 
-          href="https://connect.garmin.com/modern/proxy/course-service/course/gpx/278051153" 
-          className="example-link"
-          target="_blank"
-          rel="noopener noreferrer"
-          download="aarhus-city-half-2024.gpx"
-        >
-          Aarhus City Half 2024
-        </a>
-        <span className="example-separator">•</span>
-        <a 
-          href="https://connect.garmin.com/modern/proxy/course-service/course/gpx/356705289" 
-          className="example-link"
-          target="_blank"
-          rel="noopener noreferrer"
-          download="aarhus-city-half-2025.gpx"
-        >
-          Aarhus City Half 2025
-        </a>
+        <div className="official-routes-container">
+          <div className="official-route-item">
+            <a 
+              href="https://connect.garmin.com/modern/proxy/course-service/course/gpx/278051153" 
+              className="example-link"
+              target="_blank"
+              rel="noopener noreferrer"
+              download="aarhus-city-half-2024.gpx"
+            >
+              Aarhus City Half 2024
+            </a>
+            <span className="official-badge">{t('gpxCompare.officialRoute')}</span>
+          </div>
+          <span className="example-separator">•</span>
+          <div className="official-route-item">
+            <a 
+              href="https://connect.garmin.com/modern/proxy/course-service/course/gpx/356705289" 
+              className="example-link"
+              target="_blank"
+              rel="noopener noreferrer"
+              download="aarhus-city-half-2025.gpx"
+            >
+              Aarhus City Half 2025
+            </a>
+            <span className="official-badge">{t('gpxCompare.officialRoute')}</span>
+          </div>
+        </div>
       </div>
       
       <div className="file-upload-grid">
