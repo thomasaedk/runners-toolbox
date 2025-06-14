@@ -18,6 +18,8 @@ const DualMapView = ({
   const [routeVisibility, setRouteVisibility] = useState({ route1: true, route2: true }) // Route visibility state
   const [showKilometerMarkers, setShowKilometerMarkers] = useState({ route1: true, route2: true }) // Kilometer marker state - enabled by default
   const [showCommonSegments, setShowCommonSegments] = useState(true) // Common segments visibility - enabled by default
+  const [highlightDifferences, setHighlightDifferences] = useState(true) // Difference highlighting overlay - enabled by default
+  const [showDifferenceBoxes, setShowDifferenceBoxes] = useState(true) // Show difference area boxes - enabled by default
   const [isFullscreen, setIsFullscreen] = useState(false) // Fullscreen state
   const [isMobile, setIsMobile] = useState(false) // Mobile device detection
   
@@ -299,6 +301,8 @@ const DualMapView = ({
             showOverlaps={showOverlaps}
             backgroundOpacity={mapBackgroundOpacity}
             showKilometerMarkers={showKilometerMarkers}
+            highlightDifferences={highlightDifferences}
+            showDifferenceBoxes={showDifferenceBoxes}
           />
         </div>
       </div>
@@ -380,6 +384,28 @@ const DualMapView = ({
               onChange={(e) => setShowCommonSegments(e.target.checked)}
             />
             {t('gpxCompare.showCommonSegments')}
+          </label>
+        </div>
+        
+        <div className="control-group">
+          <label className="toggle-control">
+            <input
+              type="checkbox"
+              checked={highlightDifferences}
+              onChange={(e) => setHighlightDifferences(e.target.checked)}
+            />
+            Highlight Differences
+          </label>
+        </div>
+        
+        <div className="control-group">
+          <label className="toggle-control">
+            <input
+              type="checkbox"
+              checked={showDifferenceBoxes}
+              onChange={(e) => setShowDifferenceBoxes(e.target.checked)}
+            />
+            Show Difference Boxes
           </label>
         </div>
         
@@ -495,6 +521,8 @@ const DualMapView = ({
                 backgroundOpacity={mapBackgroundOpacity}
                 showKilometerMarkers={showKilometerMarkers}
                 showCommonSegments={showCommonSegments}
+                highlightDifferences={highlightDifferences}
+                showDifferenceBoxes={showDifferenceBoxes}
               />
             </div>
             
@@ -519,6 +547,8 @@ const DualMapView = ({
                 backgroundOpacity={mapBackgroundOpacity}
                 showKilometerMarkers={showKilometerMarkers}
                 showCommonSegments={showCommonSegments}
+                highlightDifferences={highlightDifferences}
+                showDifferenceBoxes={showDifferenceBoxes}
               />
             </div>
           </>
@@ -546,6 +576,8 @@ const DualMapView = ({
                 backgroundOpacity={mapBackgroundOpacity}
                 showKilometerMarkers={showKilometerMarkers}
                 showCommonSegments={showCommonSegments}
+                highlightDifferences={highlightDifferences}
+                showDifferenceBoxes={showDifferenceBoxes}
               />
             </div>
             
@@ -578,6 +610,8 @@ const DualMapView = ({
                 showOverlaps={false}
                 backgroundOpacity={mapBackgroundOpacity}
                 showKilometerMarkers={{ route1: false, route2: false }}
+                highlightDifferences={highlightDifferences}
+                showDifferenceBoxes={showDifferenceBoxes}
               />
             </div>
           </>
@@ -612,6 +646,8 @@ const DualMapView = ({
               showOverlaps={showOverlaps}
               backgroundOpacity={mapBackgroundOpacity}
               showKilometerMarkers={showKilometerMarkers}
+              highlightDifferences={highlightDifferences}
+              showDifferenceBoxes={showDifferenceBoxes}
             />
           </div>
         )}

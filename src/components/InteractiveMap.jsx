@@ -1,5 +1,5 @@
 import { useEffect, useRef, useImperativeHandle, forwardRef } from 'react'
-import { MapContainer, TileLayer, Polyline, Marker, Popup, Rectangle, useMap, useMapEvents } from 'react-leaflet'
+import { MapContainer, TileLayer, Polyline, Marker, Popup, Rectangle, SVGOverlay, useMap, useMapEvents } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
@@ -199,7 +199,9 @@ const InteractiveMap = forwardRef(({
   showOverlaps = true,
   backgroundOpacity = 0.3,
   showKilometerMarkers = { route1: false, route2: false },
-  showCommonSegments = true
+  showCommonSegments = true,
+  highlightDifferences = true,
+  showDifferenceBoxes = true
 }, ref) => {
   const mapRef = useRef()
   const containerRef = useRef()
@@ -295,7 +297,7 @@ const InteractiveMap = forwardRef(({
         )}
         
         {/* Merged boxes around difference areas */}
-        {(() => {
+        {showDifferenceBoxes && (() => {
           // Helper function to check if two boxes overlap
           const boxesOverlap = (box1, box2) => {
             const tolerance = 0.0001 // Small tolerance for floating point comparison
@@ -426,6 +428,128 @@ const InteractiveMap = forwardRef(({
                 opacity: 0.8,
                 fillOpacity: 0,
                 dashArray: '10, 10'
+              }}
+            />
+          ))
+        })()}
+        
+        {/* Difference area highlighting rectangles with fill */}
+        {highlightDifferences && (() => {
+          // Get merged difference boxes (reuse the same logic)
+          const allDifferenceBoxes = []
+          const thresholdInDegrees = 50 / 111000
+          
+          // Helper functions (same as above)
+          const boxesOverlap = (box1, box2) => {
+            const tolerance = 0.0001
+            return !(box1.maxLat < (box2.minLat - tolerance) || 
+                     box1.minLat > (box2.maxLat + tolerance) ||
+                     box1.maxLon < (box2.minLon - tolerance) || 
+                     box1.minLon > (box2.maxLon + tolerance))
+          }
+          
+          const mergeTwoBoxes = (box1, box2) => {
+            return {
+              minLat: Math.min(box1.minLat, box2.minLat),
+              maxLat: Math.max(box1.maxLat, box2.maxLat),
+              minLon: Math.min(box1.minLon, box2.minLon),
+              maxLon: Math.max(box1.maxLon, box2.maxLon)
+            }
+          }
+          
+          const mergeOverlappingBoxes = (boxes) => {
+            if (boxes.length === 0) return []
+            let merged = [...boxes]
+            let changed = true
+            
+            while (changed) {
+              changed = false
+              const newMerged = []
+              const used = new Set()
+              
+              for (let i = 0; i < merged.length; i++) {
+                if (used.has(i)) continue
+                let currentBox = merged[i]
+                
+                for (let j = i + 1; j < merged.length; j++) {
+                  if (used.has(j)) continue
+                  if (boxesOverlap(currentBox, merged[j])) {
+                    currentBox = mergeTwoBoxes(currentBox, merged[j])
+                    used.add(j)
+                    changed = true
+                  }
+                }
+                used.add(i)
+                newMerged.push(currentBox)
+              }
+              merged = newMerged
+            }
+            return merged
+          }
+          
+          // Collect boxes from both routes
+          if (route1 && route1.segments) {
+            route1.segments.forEach((segment) => {
+              if (segment.is_different && segment.points.length >= 2) {
+                const segmentLats = segment.points.map(p => p.lat)
+                const segmentLons = segment.points.map(p => p.lon)
+                const minLat = Math.min(...segmentLats)
+                const maxLat = Math.max(...segmentLats)
+                const minLon = Math.min(...segmentLons)
+                const maxLon = Math.max(...segmentLons)
+                const latPadding = Math.max((maxLat - minLat) * 0.3, thresholdInDegrees)
+                const lonPadding = Math.max((maxLon - minLon) * 0.3, thresholdInDegrees)
+                
+                allDifferenceBoxes.push({
+                  minLat: minLat - latPadding,
+                  maxLat: maxLat + latPadding,
+                  minLon: minLon - lonPadding,
+                  maxLon: maxLon + lonPadding
+                })
+              }
+            })
+          }
+          
+          if (route2 && route2.segments) {
+            route2.segments.forEach((segment) => {
+              if (segment.is_different && segment.points.length >= 2) {
+                const segmentLats = segment.points.map(p => p.lat)
+                const segmentLons = segment.points.map(p => p.lon)
+                const minLat = Math.min(...segmentLats)
+                const maxLat = Math.max(...segmentLats)
+                const minLon = Math.min(...segmentLons)
+                const maxLon = Math.max(...segmentLons)
+                const latPadding = Math.max((maxLat - minLat) * 0.3, thresholdInDegrees)
+                const lonPadding = Math.max((maxLon - minLon) * 0.3, thresholdInDegrees)
+                
+                allDifferenceBoxes.push({
+                  minLat: minLat - latPadding,
+                  maxLat: maxLat + latPadding,
+                  minLon: minLon - lonPadding,
+                  maxLon: maxLon + lonPadding
+                })
+              }
+            })
+          }
+          
+          const mergedBoxes = mergeOverlappingBoxes(allDifferenceBoxes)
+          
+          if (mergedBoxes.length === 0) return null
+          
+          // Create bright highlight rectangles over difference areas
+          return mergedBoxes.map((box, index) => (
+            <Rectangle
+              key={`highlight-${index}`}
+              bounds={[
+                [box.minLat, box.minLon],
+                [box.maxLat, box.maxLon]
+              ]}
+              pathOptions={{
+                color: 'yellow',
+                weight: 0,
+                opacity: 0,
+                fillColor: 'yellow',
+                fillOpacity: 0.3
               }}
             />
           ))
