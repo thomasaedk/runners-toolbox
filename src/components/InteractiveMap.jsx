@@ -1,5 +1,5 @@
 import { useEffect, useRef, useImperativeHandle, forwardRef } from 'react'
-import { MapContainer, TileLayer, Polyline, Marker, Popup, useMap, useMapEvents } from 'react-leaflet'
+import { MapContainer, TileLayer, Polyline, Marker, Popup, Rectangle, useMap, useMapEvents } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
@@ -274,67 +274,169 @@ const InteractiveMap = forwardRef(({
           opacity={backgroundOpacity}
         />
         
-        {/* Route 1 - Segmented by differences */}
-        {route1 && route1.segments && route1.segments.map((segment, index) => {
-          const segmentPoints = segment.points.map(p => [p.lat, p.lon])
-          const color = segment.is_different ? route1.color : route1.common_color
-          const shouldShow = segment.is_different || showCommonSegments
-          
-          return shouldShow ? (
-            <Polyline
-              key={`route1-segment-${index}`}
-              positions={segmentPoints}
-              color={color}
-              weight={4}
-              opacity={0.8}
-            />
-          ) : null
-        })}
-        
-        {/* Fallback: Route 1 as single line if no segments */}
-        {route1 && !route1.segments && route1Points && route1Points.length > 0 && (
+        {/* Route 1 - Simple red line */}
+        {route1 && route1Points && route1Points.length > 0 && (
           <Polyline
             positions={route1Points}
-            color={route1.color}
+            color="red"
             weight={4}
-            opacity={0.8}
+            opacity={0.9}
           />
         )}
         
-        {/* Route 2 - Segmented by differences */}
-        {route2 && route2.segments && route2.segments.map((segment, index) => {
-          const segmentPoints = segment.points.map(p => [p.lat, p.lon])
-          const color = segment.is_different ? route2.color : route2.common_color
-          const shouldShow = segment.is_different || showCommonSegments
-          
-          return shouldShow ? (
-            <Polyline
-              key={`route2-segment-${index}`}
-              positions={segmentPoints}
-              color={color}
-              weight={4}
-              opacity={0.8}
-            />
-          ) : null
-        })}
-        
-        {/* Fallback: Route 2 as single line if no segments */}
-        {route2 && !route2.segments && route2Points && route2Points.length > 0 && (
+        {/* Route 2 - Simple blue line */}
+        {route2 && route2Points && route2Points.length > 0 && (
           <Polyline
             positions={route2Points}
-            color={route2.color}
+            color="blue"
             weight={4}
-            opacity={0.8}
+            opacity={0.9}
           />
         )}
         
+        {/* Merged boxes around difference areas */}
+        {(() => {
+          // Helper function to check if two boxes overlap
+          const boxesOverlap = (box1, box2) => {
+            const tolerance = 0.0001 // Small tolerance for floating point comparison
+            return !(box1.maxLat < (box2.minLat - tolerance) || 
+                     box1.minLat > (box2.maxLat + tolerance) ||
+                     box1.maxLon < (box2.minLon - tolerance) || 
+                     box1.minLon > (box2.maxLon + tolerance))
+          }
+          
+          // Helper function to merge two boxes
+          const mergeTwoBoxes = (box1, box2) => {
+            return {
+              minLat: Math.min(box1.minLat, box2.minLat),
+              maxLat: Math.max(box1.maxLat, box2.maxLat),
+              minLon: Math.min(box1.minLon, box2.minLon),
+              maxLon: Math.max(box1.maxLon, box2.maxLon)
+            }
+          }
+          
+          // Complete merging function that iteratively merges until no more overlaps
+          const mergeOverlappingBoxes = (boxes) => {
+            if (boxes.length === 0) return []
+            
+            let merged = [...boxes] // Start with a copy of all boxes
+            let changed = true
+            
+            // Keep merging until no more changes occur
+            while (changed) {
+              changed = false
+              const newMerged = []
+              const used = new Set() // Track which boxes have been merged
+              
+              for (let i = 0; i < merged.length; i++) {
+                if (used.has(i)) continue
+                
+                let currentBox = merged[i]
+                let mergedWithSomething = false
+                
+                // Check if current box overlaps with any later box
+                for (let j = i + 1; j < merged.length; j++) {
+                  if (used.has(j)) continue
+                  
+                  if (boxesOverlap(currentBox, merged[j])) {
+                    // Merge the boxes
+                    currentBox = mergeTwoBoxes(currentBox, merged[j])
+                    used.add(j) // Mark the merged box as used
+                    mergedWithSomething = true
+                    changed = true
+                  }
+                }
+                
+                used.add(i) // Mark current box as used
+                newMerged.push(currentBox)
+              }
+              
+              merged = newMerged
+            }
+            
+            return merged
+          }
+          
+          // Collect all difference area boxes from both routes
+          const allDifferenceBoxes = []
+          const thresholdInDegrees = 50 / 111000 // Convert 50 meters to degrees
+          
+          // Add Route 1 difference boxes
+          if (route1 && route1.segments) {
+            route1.segments.forEach((segment, index) => {
+              if (segment.is_different && segment.points.length >= 2) {
+                const segmentLats = segment.points.map(p => p.lat)
+                const segmentLons = segment.points.map(p => p.lon)
+                const minLat = Math.min(...segmentLats)
+                const maxLat = Math.max(...segmentLats)
+                const minLon = Math.min(...segmentLons)
+                const maxLon = Math.max(...segmentLons)
+                
+                const latPadding = Math.max((maxLat - minLat) * 0.3, thresholdInDegrees)
+                const lonPadding = Math.max((maxLon - minLon) * 0.3, thresholdInDegrees)
+                
+                allDifferenceBoxes.push({
+                  minLat: minLat - latPadding,
+                  maxLat: maxLat + latPadding,
+                  minLon: minLon - lonPadding,
+                  maxLon: maxLon + lonPadding
+                })
+              }
+            })
+          }
+          
+          // Add Route 2 difference boxes
+          if (route2 && route2.segments) {
+            route2.segments.forEach((segment, index) => {
+              if (segment.is_different && segment.points.length >= 2) {
+                const segmentLats = segment.points.map(p => p.lat)
+                const segmentLons = segment.points.map(p => p.lon)
+                const minLat = Math.min(...segmentLats)
+                const maxLat = Math.max(...segmentLats)
+                const minLon = Math.min(...segmentLons)
+                const maxLon = Math.max(...segmentLons)
+                
+                const latPadding = Math.max((maxLat - minLat) * 0.3, thresholdInDegrees)
+                const lonPadding = Math.max((maxLon - minLon) * 0.3, thresholdInDegrees)
+                
+                allDifferenceBoxes.push({
+                  minLat: minLat - latPadding,
+                  maxLat: maxLat + latPadding,
+                  minLon: minLon - lonPadding,
+                  maxLon: maxLon + lonPadding
+                })
+              }
+            })
+          }
+          
+          // Merge overlapping boxes
+          const mergedBoxes = mergeOverlappingBoxes(allDifferenceBoxes)
+          
+          // Render merged boxes
+          return mergedBoxes.map((box, index) => (
+            <Rectangle
+              key={`merged-diff-box-${index}`}
+              bounds={[
+                [box.minLat, box.minLon],
+                [box.maxLat, box.maxLon]
+              ]}
+              pathOptions={{
+                color: 'darkblue',
+                weight: 3,
+                opacity: 0.8,
+                fillOpacity: 0,
+                dashArray: '10, 10'
+              }}
+            />
+          ))
+        })()}
         
         {/* Start/End Markers for Route 1 */}
         {route1 && (
           <>
             <Marker
               position={[route1.start.lat, route1.start.lon]}
-              icon={createCustomIcon(route1.color, 'start')}
+              icon={createCustomIcon('red', 'start')}
             >
               <Popup>
                 <strong>{route1.name}</strong><br />
@@ -344,7 +446,7 @@ const InteractiveMap = forwardRef(({
             
             <Marker
               position={[route1.end.lat, route1.end.lon]}
-              icon={createCustomIcon(route1.color, 'end')}
+              icon={createCustomIcon('red', 'end')}
             >
               <Popup>
                 <strong>{route1.name}</strong><br />
@@ -359,7 +461,7 @@ const InteractiveMap = forwardRef(({
           <>
             <Marker
               position={[route2.start.lat, route2.start.lon]}
-              icon={createCustomIcon(route2.color, 'start')}
+              icon={createCustomIcon('blue', 'start')}
             >
               <Popup>
                 <strong>{route2.name}</strong><br />
@@ -369,7 +471,7 @@ const InteractiveMap = forwardRef(({
             
             <Marker
               position={[route2.end.lat, route2.end.lon]}
-              icon={createCustomIcon(route2.color, 'end')}
+              icon={createCustomIcon('blue', 'end')}
             >
               <Popup>
                 <strong>{route2.name}</strong><br />
@@ -384,7 +486,7 @@ const InteractiveMap = forwardRef(({
           <Marker
             key={`route1-arrow-${index}`}
             position={[arrow.lat, arrow.lon]}
-            icon={createArrowIcon(arrow.bearing, route1.color)}
+            icon={createArrowIcon(arrow.bearing, 'red')}
           />
         ))}
         
@@ -393,13 +495,13 @@ const InteractiveMap = forwardRef(({
           <Marker
             key={`route2-arrow-${index}`}
             position={[arrow.lat, arrow.lon]}
-            icon={createArrowIcon(arrow.bearing, route2.color)}
+            icon={createArrowIcon(arrow.bearing, 'blue')}
           />
         ))}
         
         {/* Kilometer Markers for Route 1 */}
         {showKilometerMarkers.route1 && route1 && route1.points && 
-          generateKilometerMarkers(route1.points, route1.color).map((marker, index) => (
+          generateKilometerMarkers(route1.points, 'red').map((marker, index) => (
             <Marker
               key={`route1-km-${marker.kilometer}`}
               position={marker.position}
@@ -415,7 +517,7 @@ const InteractiveMap = forwardRef(({
         
         {/* Kilometer Markers for Route 2 */}
         {showKilometerMarkers.route2 && route2 && route2.points && 
-          generateKilometerMarkers(route2.points, route2.color).map((marker, index) => (
+          generateKilometerMarkers(route2.points, 'blue').map((marker, index) => (
             <Marker
               key={`route2-km-${marker.kilometer}`}
               position={marker.position}

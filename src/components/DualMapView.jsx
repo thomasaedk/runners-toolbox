@@ -197,7 +197,7 @@ const DualMapView = ({
                 checked={routeVisibility.route1}
                 onChange={() => toggleRouteVisibility('route1')}
               />
-              <span style={{ color: routeData?.route1?.color }}>{routeData?.route1?.name}</span>
+              <span style={{ color: 'red' }}>{routeData?.route1?.name}</span>
             </label>
             <label className="toggle-control">
               <input
@@ -205,7 +205,7 @@ const DualMapView = ({
                 checked={routeVisibility.route2}
                 onChange={() => toggleRouteVisibility('route2')}
               />
-              <span style={{ color: routeData?.route2?.color }}>{routeData?.route2?.name}</span>
+              <span style={{ color: 'blue' }}>{routeData?.route2?.name}</span>
             </label>
           </div>
           
@@ -429,7 +429,7 @@ const DualMapView = ({
           <div 
             className="route-color-indicator" 
             style={{ 
-              backgroundColor: routeData.route1.color,
+              backgroundColor: 'red',
               opacity: routeVisibility.route1 ? 1 : 0.3
             }}
           ></div>
@@ -446,7 +446,7 @@ const DualMapView = ({
           <div 
             className="route-color-indicator" 
             style={{ 
-              backgroundColor: routeData.route2.color,
+              backgroundColor: 'blue',
               opacity: routeVisibility.route2 ? 1 : 0.3
             }}
           ></div>
@@ -456,19 +456,18 @@ const DualMapView = ({
           </span>
         </div>
         
-        {/* Common segments legend */}
-        {routeData.route1.common_color && (
-          <div className="route-legend-item common-segments">
-            <div 
-              className="route-color-indicator" 
-              style={{ 
-                backgroundColor: routeData.route1.common_color,
-                opacity: 1
-              }}
-            ></div>
-            <span className="route-name">{t('gpxCompare.commonSegments')}</span>
-          </div>
-        )}
+        {/* Difference areas legend */}
+        <div className="route-legend-item difference-areas">
+          <div 
+            className="route-color-indicator" 
+            style={{ 
+              backgroundColor: 'transparent',
+              border: '2px dashed darkblue',
+              opacity: 1
+            }}
+          ></div>
+          <span className="route-name">Difference Areas</span>
+        </div>
       </div>
       
       {/* Maps Container */}

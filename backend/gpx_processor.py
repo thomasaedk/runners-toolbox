@@ -551,11 +551,97 @@ def create_comparison_plot(points1, points2, output_path, file1_path, file2_path
     # Create the plot with optimized size for web display (fills tool-container width)
     fig, ax = plt.subplots(figsize=(16, 10))
 
-    # Plot the routes (no markers, no labels)
+    # Plot the routes as simple red and blue lines
     file1_basename = os.path.basename(file1_path)
     file2_basename = os.path.basename(file2_path)
-    gdf1_mercator.plot(ax=ax, color='blue', linewidth=3, alpha=0.8, label=os.path.basename(os.path.splitext(file1_basename)[0]))
-    gdf2_mercator.plot(ax=ax, color='red', linewidth=3, alpha=0.8, label=os.path.basename(os.path.splitext(file2_basename)[0]))
+    gdf1_mercator.plot(ax=ax, color='red', linewidth=3, alpha=0.9, label=os.path.basename(os.path.splitext(file1_basename)[0]))
+    gdf2_mercator.plot(ax=ax, color='blue', linewidth=3, alpha=0.9, label=os.path.basename(os.path.splitext(file2_basename)[0]))
+    
+    # Calculate differences to identify different segments
+    interpolated_points1 = interpolate_track_points(points1, 10)
+    interpolated_points2 = interpolate_track_points(points2, 10)
+    differences = calculate_route_differences_parallel(interpolated_points1, interpolated_points2, 50)
+    
+    # Create segments for both routes
+    route1_segments = create_route_segments_by_difference(interpolated_points1, differences, 50, route_num=1)
+    route2_segments = create_route_segments_by_difference(interpolated_points2, differences, 50, route_num=2)
+    
+    # Add rounded squares around DIFFERENCE segments (not common segments)
+    from matplotlib.patches import FancyBboxPatch
+    from pyproj import Transformer
+    transformer = Transformer.from_crs('EPSG:4326', 'EPSG:3857', always_xy=True)
+    
+    # Process different segments for route 1
+    for segment in route1_segments:
+        if segment['is_different']:  # DIFFERENT segment (not common)
+            segment_points = segment['points']
+            if len(segment_points) >= 2:
+                # Convert segment points to mercator
+                segment_lons = [p['lon'] for p in segment_points]
+                segment_lats = [p['lat'] for p in segment_points]
+                
+                # Calculate bounding box for the segment
+                min_lon, max_lon = min(segment_lons), max(segment_lons)
+                min_lat, max_lat = min(segment_lats), max(segment_lats)
+                
+                # Transform to mercator coordinates
+                min_x, min_y = transformer.transform(min_lon, min_lat)
+                max_x, max_y = transformer.transform(max_lon, max_lat)
+                
+                # Add padding around the segment
+                padding = max(max_x - min_x, max_y - min_y) * 0.3
+                if padding < 100:  # Minimum padding in meters
+                    padding = 100
+                
+                # Create rounded rectangle around DIFFERENCE
+                bbox = FancyBboxPatch(
+                    (min_x - padding, min_y - padding),
+                    (max_x - min_x + 2*padding),
+                    (max_y - min_y + 2*padding),
+                    boxstyle="round,pad=0.1",
+                    facecolor='none',
+                    edgecolor='orange',
+                    alpha=0.8,
+                    linewidth=3,
+                    linestyle='--'
+                )
+                ax.add_patch(bbox)
+    
+    # Process different segments for route 2
+    for segment in route2_segments:
+        if segment['is_different']:  # DIFFERENT segment (not common)
+            segment_points = segment['points']
+            if len(segment_points) >= 2:
+                # Convert segment points to mercator
+                segment_lons = [p['lon'] for p in segment_points]
+                segment_lats = [p['lat'] for p in segment_points]
+                
+                # Calculate bounding box for the segment
+                min_lon, max_lon = min(segment_lons), max(segment_lons)
+                min_lat, max_lat = min(segment_lats), max(segment_lats)
+                
+                # Transform to mercator coordinates
+                min_x, min_y = transformer.transform(min_lon, min_lat)
+                max_x, max_y = transformer.transform(max_lon, max_lat)
+                
+                # Add padding around the segment
+                padding = max(max_x - min_x, max_y - min_y) * 0.3
+                if padding < 100:  # Minimum padding in meters
+                    padding = 100
+                
+                # Create rounded rectangle around DIFFERENCE
+                bbox = FancyBboxPatch(
+                    (min_x - padding, min_y - padding),
+                    (max_x - min_x + 2*padding),
+                    (max_y - min_y + 2*padding),
+                    boxstyle="round,pad=0.1",
+                    facecolor='none',
+                    edgecolor='purple',
+                    alpha=0.8,
+                    linewidth=3,
+                    linestyle='--'
+                )
+                ax.add_patch(bbox)
     
     # Set plot bounds with padding for legend and satellite image text
     bottom_padding = height * 0.10  # Extra padding at bottom for satellite image attribution text
