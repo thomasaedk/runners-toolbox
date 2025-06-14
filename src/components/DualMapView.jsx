@@ -17,6 +17,7 @@ const DualMapView = ({
   const [showDirections, setShowDirections] = useState({ route1: false, route2: false }) // Internal state for directions per route - disabled by default
   const [routeVisibility, setRouteVisibility] = useState({ route1: true, route2: true }) // Route visibility state
   const [showKilometerMarkers, setShowKilometerMarkers] = useState({ route1: true, route2: true }) // Kilometer marker state - enabled by default
+  const [showCommonSegments, setShowCommonSegments] = useState(true) // Common segments visibility - enabled by default
   const [isFullscreen, setIsFullscreen] = useState(false) // Fullscreen state
   const [isMobile, setIsMobile] = useState(false) // Mobile device detection
   
@@ -372,6 +373,17 @@ const DualMapView = ({
         </div>
         
         <div className="control-group">
+          <label className="toggle-control">
+            <input
+              type="checkbox"
+              checked={showCommonSegments}
+              onChange={(e) => setShowCommonSegments(e.target.checked)}
+            />
+            {t('gpxCompare.showCommonSegments')}
+          </label>
+        </div>
+        
+        <div className="control-group">
           <label className="opacity-control">
             <span className="opacity-label">{t('gpxCompare.mapOpacity', 'Map Opacity')}</span>
             <input
@@ -443,6 +455,20 @@ const DualMapView = ({
             {routeVisibility.route2 ? '👁️' : '🚫'}
           </span>
         </div>
+        
+        {/* Common segments legend */}
+        {routeData.route1.common_color && (
+          <div className="route-legend-item common-segments">
+            <div 
+              className="route-color-indicator" 
+              style={{ 
+                backgroundColor: routeData.route1.common_color,
+                opacity: 1
+              }}
+            ></div>
+            <span className="route-name">{t('gpxCompare.commonSegments')}</span>
+          </div>
+        )}
       </div>
       
       {/* Maps Container */}
@@ -469,6 +495,7 @@ const DualMapView = ({
                 showOverlaps={false}
                 backgroundOpacity={mapBackgroundOpacity}
                 showKilometerMarkers={showKilometerMarkers}
+                showCommonSegments={showCommonSegments}
               />
             </div>
             
@@ -492,6 +519,7 @@ const DualMapView = ({
                 showOverlaps={false}
                 backgroundOpacity={mapBackgroundOpacity}
                 showKilometerMarkers={showKilometerMarkers}
+                showCommonSegments={showCommonSegments}
               />
             </div>
           </>
@@ -518,6 +546,7 @@ const DualMapView = ({
                 showOverlaps={showOverlaps}
                 backgroundOpacity={mapBackgroundOpacity}
                 showKilometerMarkers={showKilometerMarkers}
+                showCommonSegments={showCommonSegments}
               />
             </div>
             

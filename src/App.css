@@ -820,6 +820,83 @@ body {
   box-shadow: none;
 }
 
+/* Configuration Section Styles */
+.config-section {
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(102, 126, 234, 0.1);
+}
+
+.config-section h3 {
+  margin: 0 0 1rem 0;
+  color: #374151;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.config-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.config-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.config-item label {
+  font-weight: 500;
+  color: #374151;
+  font-size: 0.95rem;
+}
+
+.config-input {
+  padding: 0.75rem;
+  border: 2px solid rgba(102, 126, 234, 0.2);
+  border-radius: 8px;
+  font-size: 1rem;
+  background: white;
+  transition: all 0.3s ease;
+  width: 100px;
+}
+
+.config-input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.config-unit {
+  font-size: 0.85rem;
+  color: #6b7280;
+  margin-left: 0.5rem;
+  align-self: flex-start;
+  margin-top: 0.75rem;
+}
+
+.config-description {
+  font-size: 0.85rem;
+  color: #6b7280;
+  margin: 0.25rem 0 0 0;
+  line-height: 1.4;
+}
+
+/* Common segments legend styling */
+.route-legend-item.common-segments {
+  cursor: default;
+  opacity: 0.9;
+}
+
+.route-legend-item.common-segments:hover {
+  background: rgba(107, 114, 128, 0.1);
+  transform: none;
+}
+
 .toggle-control {
   display: flex;
   align-items: center;

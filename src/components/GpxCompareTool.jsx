@@ -11,6 +11,12 @@ function GpxCompareTool({ onStateChange }) {
     // Load map type preference from localStorage
     return localStorage.getItem('gpx-map-type') || 'satellite'
   })
+  const [interpolationDistance, setInterpolationDistance] = useState(() => {
+    return parseFloat(localStorage.getItem('gpx-interpolation-distance')) || 10
+  })
+  const [differenceThreshold, setDifferenceThreshold] = useState(() => {
+    return parseFloat(localStorage.getItem('gpx-difference-threshold')) || 50
+  })
   const { t } = useTranslation()
   const resultRef = useRef(null)
 
@@ -121,6 +127,8 @@ function GpxCompareTool({ onStateChange }) {
     formData.append('file1', files.file1)
     formData.append('file2', files.file2)
     formData.append('mapType', mapType)
+    formData.append('interpolationDistance', interpolationDistance.toString())
+    formData.append('differenceThreshold', differenceThreshold.toString())
 
     try {
       const controller = new AbortController()
@@ -166,6 +174,22 @@ function GpxCompareTool({ onStateChange }) {
     // Save to localStorage
     localStorage.setItem('gpx-map-type', newMapType)
     // No need to clear result data as maps can switch backgrounds dynamically
+  }
+
+  const handleInterpolationDistanceChange = (value) => {
+    const numValue = parseFloat(value)
+    if (numValue > 0) {
+      setInterpolationDistance(numValue)
+      localStorage.setItem('gpx-interpolation-distance', numValue.toString())
+    }
+  }
+
+  const handleDifferenceThresholdChange = (value) => {
+    const numValue = parseFloat(value)
+    if (numValue >= 0) {
+      setDifferenceThreshold(numValue)
+      localStorage.setItem('gpx-difference-threshold', numValue.toString())
+    }
   }
 
   const clearFiles = () => {
@@ -282,6 +306,52 @@ function GpxCompareTool({ onStateChange }) {
                 <p>{t('gpxCompare.dragDrop')}</p>
               </>
             )}
+          </div>
+        </div>
+      </div>
+
+      {/* Configuration Parameters */}
+      <div className="config-section">
+        <h3>{t('gpxCompare.advancedSettings')}</h3>
+        <div className="config-grid">
+          <div className="config-item">
+            <label htmlFor="interpolation-distance">
+              {t('gpxCompare.interpolationDistance')}
+            </label>
+            <input
+              id="interpolation-distance"
+              type="number"
+              value={interpolationDistance}
+              onChange={(e) => handleInterpolationDistanceChange(e.target.value)}
+              min="1"
+              max="100"
+              step="1"
+              className="config-input"
+            />
+            <span className="config-unit">meters</span>
+            <p className="config-description">
+              {t('gpxCompare.interpolationDescription')}
+            </p>
+          </div>
+          
+          <div className="config-item">
+            <label htmlFor="difference-threshold">
+              {t('gpxCompare.differenceThreshold')}
+            </label>
+            <input
+              id="difference-threshold"
+              type="number"
+              value={differenceThreshold}
+              onChange={(e) => handleDifferenceThresholdChange(e.target.value)}
+              min="0"
+              max="1000"
+              step="5"
+              className="config-input"
+            />
+            <span className="config-unit">meters</span>
+            <p className="config-description">
+              {t('gpxCompare.thresholdDescription')}
+            </p>
           </div>
         </div>
       </div>

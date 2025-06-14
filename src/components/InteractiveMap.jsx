@@ -198,7 +198,8 @@ const InteractiveMap = forwardRef(({
   showDirections = { route1: true, route2: true },
   showOverlaps = true,
   backgroundOpacity = 0.3,
-  showKilometerMarkers = { route1: false, route2: false }
+  showKilometerMarkers = { route1: false, route2: false },
+  showCommonSegments = true
 }, ref) => {
   const mapRef = useRef()
   const containerRef = useRef()
@@ -273,8 +274,25 @@ const InteractiveMap = forwardRef(({
           opacity={backgroundOpacity}
         />
         
-        {/* Route 1 */}
-        {route1 && route1Points && route1Points.length > 0 && (
+        {/* Route 1 - Segmented by differences */}
+        {route1 && route1.segments && route1.segments.map((segment, index) => {
+          const segmentPoints = segment.points.map(p => [p.lat, p.lon])
+          const color = segment.is_different ? route1.color : route1.common_color
+          const shouldShow = segment.is_different || showCommonSegments
+          
+          return shouldShow ? (
+            <Polyline
+              key={`route1-segment-${index}`}
+              positions={segmentPoints}
+              color={color}
+              weight={4}
+              opacity={0.8}
+            />
+          ) : null
+        })}
+        
+        {/* Fallback: Route 1 as single line if no segments */}
+        {route1 && !route1.segments && route1Points && route1Points.length > 0 && (
           <Polyline
             positions={route1Points}
             color={route1.color}
@@ -283,8 +301,25 @@ const InteractiveMap = forwardRef(({
           />
         )}
         
-        {/* Route 2 */}
-        {route2 && route2Points && route2Points.length > 0 && (
+        {/* Route 2 - Segmented by differences */}
+        {route2 && route2.segments && route2.segments.map((segment, index) => {
+          const segmentPoints = segment.points.map(p => [p.lat, p.lon])
+          const color = segment.is_different ? route2.color : route2.common_color
+          const shouldShow = segment.is_different || showCommonSegments
+          
+          return shouldShow ? (
+            <Polyline
+              key={`route2-segment-${index}`}
+              positions={segmentPoints}
+              color={color}
+              weight={4}
+              opacity={0.8}
+            />
+          ) : null
+        })}
+        
+        {/* Fallback: Route 2 as single line if no segments */}
+        {route2 && !route2.segments && route2Points && route2Points.length > 0 && (
           <Polyline
             positions={route2Points}
             color={route2.color}
