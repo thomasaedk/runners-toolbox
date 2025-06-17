@@ -125,7 +125,7 @@ def interpolate_track_points(points, target_distance_meters=10):
     
     return interpolated_points
 
-def calculate_route_differences_parallel(points1, points2, threshold_meters=50):
+def calculate_route_differences_parallel(points1, points2, threshold_meters=30):
     """Calculate differences between two routes using parallel processing."""
     if len(points1) < 2 or len(points2) < 2:
         return []
@@ -508,7 +508,7 @@ def process_gpx_data(points1, points2, file1_path, file2_path, interpolation_dis
         }
     }
 
-def create_comparison_plot(points1, points2, output_path, file1_path, file2_path, map_type='satellite'):
+def create_comparison_plot(points1, points2, output_path, file1_path, file2_path, map_type='satellite', difference_threshold=30):
     """Create a comparison visualization of two GPX tracks on satellite imagery."""
     # Extract coordinates
     lats1 = [p['lat'] for p in points1]
@@ -560,11 +560,11 @@ def create_comparison_plot(points1, points2, output_path, file1_path, file2_path
     # Calculate differences to identify different segments
     interpolated_points1 = interpolate_track_points(points1, 10)
     interpolated_points2 = interpolate_track_points(points2, 10)
-    differences = calculate_route_differences_parallel(interpolated_points1, interpolated_points2, 50)
+    differences = calculate_route_differences_parallel(interpolated_points1, interpolated_points2, difference_threshold)
     
     # Create segments for both routes
-    route1_segments = create_route_segments_by_difference(interpolated_points1, differences, 50, route_num=1)
-    route2_segments = create_route_segments_by_difference(interpolated_points2, differences, 50, route_num=2)
+    route1_segments = create_route_segments_by_difference(interpolated_points1, differences, difference_threshold, route_num=1)
+    route2_segments = create_route_segments_by_difference(interpolated_points2, differences, difference_threshold, route_num=2)
     
     # Add rounded squares around DIFFERENCE segments (not common segments)
     from matplotlib.patches import FancyBboxPatch

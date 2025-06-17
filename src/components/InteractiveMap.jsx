@@ -298,7 +298,8 @@ const InteractiveMap = forwardRef(({
   showStartEndMarkers = true,
   showCommonSegments = true,
   highlightDifferences = true,
-  showDifferenceBoxes = true
+  showDifferenceBoxes = true,
+  differenceThreshold = 30
 }, ref) => {
   const mapRef = useRef()
   const containerRef = useRef()
@@ -480,7 +481,7 @@ const InteractiveMap = forwardRef(({
           
           // Collect all difference area boxes from both routes
           const allDifferenceBoxes = []
-          const thresholdInDegrees = 50 / 111000 // Convert 50 meters to degrees
+          const thresholdInDegrees = differenceThreshold / 111000 // Convert threshold meters to degrees
           
           // Add Route 1 difference boxes
           if (route1 && route1.segments) {
@@ -556,7 +557,7 @@ const InteractiveMap = forwardRef(({
         {highlightDifferences && (() => {
           // Get merged difference boxes (reuse the same logic)
           const allDifferenceBoxes = []
-          const thresholdInDegrees = 50 / 111000
+          const thresholdInDegrees = differenceThreshold / 111000
           
           // Helper functions (same as above)
           const boxesOverlap = (box1, box2) => {

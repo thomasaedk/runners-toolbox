@@ -8,7 +8,7 @@ const DualMapView = ({
   showOverlaps = true,
   onMapTypeChange,
   interpolationDistance = 10,
-  differenceThreshold = 50,
+  differenceThreshold = 30,
   onInterpolationDistanceChange,
   onDifferenceThresholdChange
 }) => {
@@ -240,6 +240,7 @@ const DualMapView = ({
             showStartEndMarkers={showStartEndMarkers}
             highlightDifferences={highlightDifferences}
             showDifferenceBoxes={showDifferenceBoxes}
+            differenceThreshold={differenceThreshold}
           />
         </div>
       </div>
@@ -477,6 +478,7 @@ const DualMapView = ({
             showStartEndMarkers={showStartEndMarkers}
             highlightDifferences={highlightDifferences}
             showDifferenceBoxes={showDifferenceBoxes}
+            differenceThreshold={differenceThreshold}
           />
         </div>
       </div>

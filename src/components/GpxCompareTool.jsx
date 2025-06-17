@@ -15,7 +15,7 @@ function GpxCompareTool({ onStateChange }) {
     return parseFloat(localStorage.getItem('gpx-interpolation-distance')) || 10
   })
   const [differenceThreshold, setDifferenceThreshold] = useState(() => {
-    return parseFloat(localStorage.getItem('gpx-difference-threshold')) || 50
+    return parseFloat(localStorage.getItem('gpx-difference-threshold')) || 30
   })
   const { t } = useTranslation()
   const resultRef = useRef(null)
