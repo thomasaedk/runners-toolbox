@@ -11,6 +11,12 @@ function GpxCompareTool({ onStateChange }) {
     // Load map type preference from localStorage
     return localStorage.getItem('gpx-map-type') || 'satellite'
   })
+  const [interpolationDistance, setInterpolationDistance] = useState(() => {
+    return parseFloat(localStorage.getItem('gpx-interpolation-distance')) || 10
+  })
+  const [differenceThreshold, setDifferenceThreshold] = useState(() => {
+    return parseFloat(localStorage.getItem('gpx-difference-threshold')) || 50
+  })
   const { t } = useTranslation()
   const resultRef = useRef(null)
 
@@ -57,6 +63,12 @@ function GpxCompareTool({ onStateChange }) {
   const handleFileChange = (fileNumber, event) => {
     const file = event.target.files[0]
     if (file && file.name.endsWith('.gpx')) {
+      // Check file size (3MB limit)
+      const maxSizeInBytes = 3 * 1024 * 1024 // 3MB
+      if (file.size > maxSizeInBytes) {
+        alert(t('gpxCompare.errors.fileTooLarge', 'File is too large. Maximum file size is 3MB.'))
+        return
+      }
       setFiles(prev => ({ ...prev, [fileNumber]: file }))
     } else {
       alert(t('gpxCompare.errors.onlyGpxFiles'))
@@ -84,6 +96,12 @@ function GpxCompareTool({ onStateChange }) {
                        file.type === 'text/xml'
     
     if (file && isValidGpx) {
+      // Check file size (3MB limit)
+      const maxSizeInBytes = 3 * 1024 * 1024 // 3MB
+      if (file.size > maxSizeInBytes) {
+        alert(t('gpxCompare.errors.fileTooLarge', 'File is too large. Maximum file size is 3MB.'))
+        return
+      }
       setFiles(prev => ({ ...prev, [fileNumber]: file }))
     } else {
       alert(t('gpxCompare.errors.onlyGpxFilesDrop'))
@@ -121,6 +139,8 @@ function GpxCompareTool({ onStateChange }) {
     formData.append('file1', files.file1)
     formData.append('file2', files.file2)
     formData.append('mapType', mapType)
+    formData.append('interpolationDistance', interpolationDistance.toString())
+    formData.append('differenceThreshold', differenceThreshold.toString())
 
     try {
       const controller = new AbortController()
@@ -166,6 +186,22 @@ function GpxCompareTool({ onStateChange }) {
     // Save to localStorage
     localStorage.setItem('gpx-map-type', newMapType)
     // No need to clear result data as maps can switch backgrounds dynamically
+  }
+
+  const handleInterpolationDistanceChange = (value) => {
+    const numValue = parseFloat(value)
+    if (numValue > 0) {
+      setInterpolationDistance(numValue)
+      localStorage.setItem('gpx-interpolation-distance', numValue.toString())
+    }
+  }
+
+  const handleDifferenceThresholdChange = (value) => {
+    const numValue = parseFloat(value)
+    if (numValue >= 0) {
+      setDifferenceThreshold(numValue)
+      localStorage.setItem('gpx-difference-threshold', numValue.toString())
+    }
   }
 
   const clearFiles = () => {
@@ -286,6 +322,7 @@ function GpxCompareTool({ onStateChange }) {
         </div>
       </div>
 
+
       <div className="button-container">
         <button 
           className="upload-button" 
@@ -307,6 +344,10 @@ function GpxCompareTool({ onStateChange }) {
             mapType={mapType}
             showOverlaps={true}
             onMapTypeChange={handleMapTypeChange}
+            interpolationDistance={interpolationDistance}
+            differenceThreshold={differenceThreshold}
+            onInterpolationDistanceChange={handleInterpolationDistanceChange}
+            onDifferenceThresholdChange={handleDifferenceThresholdChange}
           />
           
         </div>

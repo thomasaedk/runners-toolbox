@@ -21,6 +21,8 @@ from shapely.geometry import LineString, Point
 import pandas as pd
 import json
 import math
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
+from multiprocessing import cpu_count
 
 def parse_gpx_file(file_path):
     """Parse a GPX file and extract track points."""
@@ -77,6 +79,214 @@ def calculate_distance(lat1, lon1, lat2, lon2):
     c = 2 * math.asin(math.sqrt(a))
     
     return R * c
+
+def interpolate_track_points(points, target_distance_meters=10):
+    """Interpolate track points to have a consistent distance between points."""
+    if len(points) < 2:
+        return points
+    
+    interpolated_points = []
+    current_distance = 0
+    
+    # Add first point
+    interpolated_points.append(points[0])
+    
+    for i in range(1, len(points)):
+        prev_point = points[i-1]
+        curr_point = points[i]
+        
+        # Calculate distance between consecutive points
+        segment_distance = calculate_distance(
+            prev_point['lat'], prev_point['lon'],
+            curr_point['lat'], curr_point['lon']
+        )
+        
+        if segment_distance == 0:
+            continue
+            
+        # Calculate how many interpolated points we need in this segment
+        num_points = max(1, int(segment_distance / target_distance_meters))
+        
+        # Interpolate points along the segment
+        for j in range(1, num_points + 1):
+            ratio = j / num_points
+            
+            # Linear interpolation of coordinates
+            new_lat = prev_point['lat'] + (curr_point['lat'] - prev_point['lat']) * ratio
+            new_lon = prev_point['lon'] + (curr_point['lon'] - prev_point['lon']) * ratio
+            new_ele = prev_point['ele'] + (curr_point['ele'] - prev_point['ele']) * ratio
+            
+            interpolated_points.append({
+                'lat': new_lat,
+                'lon': new_lon,
+                'ele': new_ele,
+                'time': None  # Interpolated points don't have original timestamps
+            })
+    
+    return interpolated_points
+
+def calculate_route_differences_parallel(points1, points2, threshold_meters=50):
+    """Calculate differences between two routes using parallel processing."""
+    if len(points1) < 2 or len(points2) < 2:
+        return []
+    
+    # Use ThreadPoolExecutor for I/O bound tasks (distance calculations)
+    max_workers = min(16, cpu_count())
+    
+    def find_closest_point_distance(point1_data):
+        idx, point1 = point1_data
+        min_distance = float('inf')
+        closest_point = None
+        closest_idx = None
+        
+        for j, point2 in enumerate(points2):
+            distance = calculate_distance(
+                point1['lat'], point1['lon'],
+                point2['lat'], point2['lon']
+            )
+            if distance < min_distance:
+                min_distance = distance
+                closest_point = point2
+                closest_idx = j
+        
+        return {
+            'route1_point_idx': idx,
+            'route1_point': point1,
+            'closest_route2_point': closest_point,
+            'closest_route2_idx': closest_idx,
+            'distance': min_distance,
+            'exceeds_threshold': min_distance > threshold_meters
+        }
+    
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        # Sample points to avoid excessive computation
+        sample_rate = 1  # Use every point as specified
+        sampled_points1 = [(i, points1[i]) for i in range(0, len(points1), sample_rate)]
+        
+        differences = list(executor.map(find_closest_point_distance, sampled_points1))
+    
+    return differences
+
+def extend_point_along_route(point, next_point, distance_meters):
+    """Extend a point along the route direction by a given distance."""
+    if not next_point:
+        return point
+    
+    # Calculate bearing from point to next_point
+    bearing = calculate_bearing(point['lat'], point['lon'], next_point['lat'], next_point['lon'])
+    
+    # Calculate new position
+    lat_rad = math.radians(point['lat'])
+    lon_rad = math.radians(point['lon'])
+    bearing_rad = math.radians(bearing)
+    
+    # Earth's radius in meters
+    R = 6371000
+    
+    # Calculate new latitude
+    new_lat_rad = math.asin(
+        math.sin(lat_rad) * math.cos(distance_meters / R) +
+        math.cos(lat_rad) * math.sin(distance_meters / R) * math.cos(bearing_rad)
+    )
+    
+    # Calculate new longitude
+    new_lon_rad = lon_rad + math.atan2(
+        math.sin(bearing_rad) * math.sin(distance_meters / R) * math.cos(lat_rad),
+        math.cos(distance_meters / R) - math.sin(lat_rad) * math.sin(new_lat_rad)
+    )
+    
+    return {
+        'lat': math.degrees(new_lat_rad),
+        'lon': math.degrees(new_lon_rad),
+        'ele': point['ele'],
+        'time': None
+    }
+
+def create_route_segments_by_difference(points, differences, threshold_meters=50, route_num=1):
+    """Create route segments based on difference analysis."""
+    if not points or not differences:
+        return []
+    
+    # Create a map of point indices to difference status
+    point_difference_map = {}
+    
+    if route_num == 1:
+        # For route 1, use the difference data directly
+        for diff in differences:
+            idx = diff['route1_point_idx']
+            point_difference_map[idx] = diff['exceeds_threshold']
+    else:
+        # For route 2, calculate differences for each point
+        for i, point2 in enumerate(points):
+            min_distance = float('inf')
+            # Find the closest point in route 1
+            for diff in differences:
+                route1_point = diff['route1_point']
+                distance = calculate_distance(
+                    point2['lat'], point2['lon'],
+                    route1_point['lat'], route1_point['lon']
+                )
+                if distance < min_distance:
+                    min_distance = distance
+            
+            # Point is different if closest distance exceeds threshold
+            point_difference_map[i] = min_distance > threshold_meters
+    
+    segments = []
+    current_segment = []
+    current_is_different = None
+    
+    for i, point in enumerate(points):
+        is_different = point_difference_map.get(i, False)  # Default to common if no data
+        
+        # If this is the first point or the difference status changed
+        if current_is_different is None or current_is_different != is_different:
+            # Save the previous segment if it exists
+            if current_segment:
+                segments.append({
+                    'points': current_segment,
+                    'is_different': current_is_different,
+                    'start_idx': current_segment[0]['original_idx'],
+                    'end_idx': current_segment[-1]['original_idx']
+                })
+            
+            # Start a new segment
+            current_segment = []
+            current_is_different = is_different
+        
+        # Add point to current segment with original index
+        point_with_idx = point.copy()
+        point_with_idx['original_idx'] = i
+        current_segment.append(point_with_idx)
+    
+    # Add the final segment
+    if current_segment:
+        segments.append({
+            'points': current_segment,
+            'is_different': current_is_different,
+            'start_idx': current_segment[0]['original_idx'],
+            'end_idx': current_segment[-1]['original_idx']
+        })
+    
+    # Return segments without any extensions
+    return segments
+
+def _interpolate_with_distance(args):
+    """Helper function for parallel interpolation that can be pickled."""
+    points, target_distance = args
+    return interpolate_track_points(points, target_distance)
+
+def process_interpolation_parallel(points_list, target_distance):
+    """Process interpolation for multiple point sets in parallel."""
+    max_workers = min(16, cpu_count())
+    
+    # Prepare arguments for the helper function
+    args_list = [(points, target_distance) for points in points_list]
+    
+    with ProcessPoolExecutor(max_workers=max_workers) as executor:
+        results = list(executor.map(_interpolate_with_distance, args_list))
+    
+    return results
 
 def generate_direction_arrows(points, interval_meters=500):
     """Generate direction arrows along the route at specified intervals."""
@@ -191,29 +401,58 @@ def smart_marker_positioning(start_point, end_point, other_points, min_distance=
         # Return original points if there's any error
         return start_point, end_point
 
-def process_gpx_data(points1, points2, file1_path, file2_path):
+def process_gpx_data(points1, points2, file1_path, file2_path, interpolation_distance=10, difference_threshold=50):
     """Process GPX data and return structured data for interactive visualization."""
     if not points1 or not points2:
         raise ValueError("Both GPX files must contain valid track points")
     
     try:
-        # Extract route data
+        print(f"Original points - Route1: {len(points1)}, Route2: {len(points2)}")
+        
+        # Interpolate points in parallel
+        print(f"Interpolating with {interpolation_distance}m spacing...")
+        interpolated_results = process_interpolation_parallel([points1, points2], interpolation_distance)
+        interpolated_points1, interpolated_points2 = interpolated_results
+        
+        print(f"Interpolated points - Route1: {len(interpolated_points1)}, Route2: {len(interpolated_points2)}")
+        
+        # Calculate differences using parallel processing
+        print(f"Calculating differences with {difference_threshold}m threshold...")
+        differences = calculate_route_differences_parallel(interpolated_points1, interpolated_points2, difference_threshold)
+        
+        # Count significant differences
+        significant_differences = [d for d in differences if d['exceeds_threshold']]
+        print(f"Found {len(significant_differences)} significant differences out of {len(differences)} total comparisons")
+        
+        # Create route segments based on differences
+        print("Creating route segments based on differences...")
+        route1_segments = create_route_segments_by_difference(interpolated_points1, differences, difference_threshold, route_num=1)
+        route2_segments = create_route_segments_by_difference(interpolated_points2, differences, difference_threshold, route_num=2)
+        print(f"Route 1 segments: {len(route1_segments)}, Route 2 segments: {len(route2_segments)}")
+        
+        # Extract route data using interpolated points
         route1 = {
             'name': os.path.splitext(os.path.basename(file1_path))[0],
-            'points': points1,
-            'start': points1[0],
-            'end': points1[-1],
-            'color': '#2563eb',  # Blue
-            'arrows': generate_direction_arrows(points1)
+            'points': interpolated_points1,
+            'original_points': points1,
+            'start': interpolated_points1[0],
+            'end': interpolated_points1[-1],
+            'color': '#8b5cf6',  # Purple
+            'common_color': '#fbbf24',  # Bright Yellow for common segments
+            'arrows': generate_direction_arrows(interpolated_points1),
+            'segments': route1_segments
         }
         
         route2 = {
             'name': os.path.splitext(os.path.basename(file2_path))[0],
-            'points': points2,
-            'start': points2[0],
-            'end': points2[-1],
-            'color': '#dc2626',  # Red
-            'arrows': generate_direction_arrows(points2)
+            'points': interpolated_points2,
+            'original_points': points2,
+            'start': interpolated_points2[0],
+            'end': interpolated_points2[-1],
+            'color': '#f97316',  # Orange
+            'common_color': '#fbbf24',  # Bright Yellow for common segments
+            'arrows': generate_direction_arrows(interpolated_points2),
+            'segments': route2_segments
         }
     except Exception as e:
         print(f"Error creating route data: {e}")
@@ -230,9 +469,9 @@ def process_gpx_data(points1, points2, file1_path, file2_path):
         route2['start'], route2['end'], other_points
     )
     
-    # Calculate bounds
-    all_lats = [p['lat'] for p in points1 + points2]
-    all_lons = [p['lon'] for p in points1 + points2]
+    # Calculate bounds using interpolated points
+    all_lats = [p['lat'] for p in interpolated_points1 + interpolated_points2]
+    all_lons = [p['lon'] for p in interpolated_points1 + interpolated_points2]
     
     bounds = {
         'north': max(all_lats),
@@ -250,14 +489,23 @@ def process_gpx_data(points1, points2, file1_path, file2_path):
     bounds['east'] += lon_padding
     bounds['west'] -= lon_padding
     
-    # Detect overlaps
-    overlaps = detect_route_overlaps(points1, points2)
+    # Use the calculated differences instead of simple overlaps
+    overlaps = significant_differences
     
     return {
         'route1': route1,
         'route2': route2,
         'bounds': bounds,
-        'overlaps': overlaps
+        'overlaps': overlaps,
+        'differences': differences,
+        'significant_differences': significant_differences,
+        'interpolation_distance': interpolation_distance,
+        'difference_threshold': difference_threshold,
+        'statistics': {
+            'total_comparisons': len(differences),
+            'significant_differences_count': len(significant_differences),
+            'similarity_percentage': round((1 - len(significant_differences) / len(differences)) * 100, 2) if differences else 0
+        }
     }
 
 def create_comparison_plot(points1, points2, output_path, file1_path, file2_path, map_type='satellite'):
@@ -303,11 +551,97 @@ def create_comparison_plot(points1, points2, output_path, file1_path, file2_path
     # Create the plot with optimized size for web display (fills tool-container width)
     fig, ax = plt.subplots(figsize=(16, 10))
 
-    # Plot the routes (no markers, no labels)
+    # Plot the routes as simple red and blue lines
     file1_basename = os.path.basename(file1_path)
     file2_basename = os.path.basename(file2_path)
-    gdf1_mercator.plot(ax=ax, color='blue', linewidth=3, alpha=0.8, label=os.path.basename(os.path.splitext(file1_basename)[0]))
-    gdf2_mercator.plot(ax=ax, color='red', linewidth=3, alpha=0.8, label=os.path.basename(os.path.splitext(file2_basename)[0]))
+    gdf1_mercator.plot(ax=ax, color='red', linewidth=3, alpha=0.9, label=os.path.basename(os.path.splitext(file1_basename)[0]))
+    gdf2_mercator.plot(ax=ax, color='blue', linewidth=3, alpha=0.9, label=os.path.basename(os.path.splitext(file2_basename)[0]))
+    
+    # Calculate differences to identify different segments
+    interpolated_points1 = interpolate_track_points(points1, 10)
+    interpolated_points2 = interpolate_track_points(points2, 10)
+    differences = calculate_route_differences_parallel(interpolated_points1, interpolated_points2, 50)
+    
+    # Create segments for both routes
+    route1_segments = create_route_segments_by_difference(interpolated_points1, differences, 50, route_num=1)
+    route2_segments = create_route_segments_by_difference(interpolated_points2, differences, 50, route_num=2)
+    
+    # Add rounded squares around DIFFERENCE segments (not common segments)
+    from matplotlib.patches import FancyBboxPatch
+    from pyproj import Transformer
+    transformer = Transformer.from_crs('EPSG:4326', 'EPSG:3857', always_xy=True)
+    
+    # Process different segments for route 1
+    for segment in route1_segments:
+        if segment['is_different']:  # DIFFERENT segment (not common)
+            segment_points = segment['points']
+            if len(segment_points) >= 2:
+                # Convert segment points to mercator
+                segment_lons = [p['lon'] for p in segment_points]
+                segment_lats = [p['lat'] for p in segment_points]
+                
+                # Calculate bounding box for the segment
+                min_lon, max_lon = min(segment_lons), max(segment_lons)
+                min_lat, max_lat = min(segment_lats), max(segment_lats)
+                
+                # Transform to mercator coordinates
+                min_x, min_y = transformer.transform(min_lon, min_lat)
+                max_x, max_y = transformer.transform(max_lon, max_lat)
+                
+                # Add padding around the segment
+                padding = max(max_x - min_x, max_y - min_y) * 0.3
+                if padding < 100:  # Minimum padding in meters
+                    padding = 100
+                
+                # Create rounded rectangle around DIFFERENCE
+                bbox = FancyBboxPatch(
+                    (min_x - padding, min_y - padding),
+                    (max_x - min_x + 2*padding),
+                    (max_y - min_y + 2*padding),
+                    boxstyle="round,pad=0.1",
+                    facecolor='none',
+                    edgecolor='orange',
+                    alpha=0.8,
+                    linewidth=3,
+                    linestyle='--'
+                )
+                ax.add_patch(bbox)
+    
+    # Process different segments for route 2
+    for segment in route2_segments:
+        if segment['is_different']:  # DIFFERENT segment (not common)
+            segment_points = segment['points']
+            if len(segment_points) >= 2:
+                # Convert segment points to mercator
+                segment_lons = [p['lon'] for p in segment_points]
+                segment_lats = [p['lat'] for p in segment_points]
+                
+                # Calculate bounding box for the segment
+                min_lon, max_lon = min(segment_lons), max(segment_lons)
+                min_lat, max_lat = min(segment_lats), max(segment_lats)
+                
+                # Transform to mercator coordinates
+                min_x, min_y = transformer.transform(min_lon, min_lat)
+                max_x, max_y = transformer.transform(max_lon, max_lat)
+                
+                # Add padding around the segment
+                padding = max(max_x - min_x, max_y - min_y) * 0.3
+                if padding < 100:  # Minimum padding in meters
+                    padding = 100
+                
+                # Create rounded rectangle around DIFFERENCE
+                bbox = FancyBboxPatch(
+                    (min_x - padding, min_y - padding),
+                    (max_x - min_x + 2*padding),
+                    (max_y - min_y + 2*padding),
+                    boxstyle="round,pad=0.1",
+                    facecolor='none',
+                    edgecolor='purple',
+                    alpha=0.8,
+                    linewidth=3,
+                    linestyle='--'
+                )
+                ax.add_patch(bbox)
     
     # Set plot bounds with padding for legend and satellite image text
     bottom_padding = height * 0.10  # Extra padding at bottom for satellite image attribution text

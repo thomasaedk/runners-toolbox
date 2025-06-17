@@ -93,9 +93,15 @@ def compare_gpx_data():
         if not points2:
             return jsonify({'error': 'No track points found in second GPX file'}), 400
         
+        # Get configurable parameters from form data
+        interpolation_distance = float(request.form.get('interpolationDistance', 10))
+        difference_threshold = float(request.form.get('differenceThreshold', 50))
+        
+        print(f"Processing with interpolation distance: {interpolation_distance}m, difference threshold: {difference_threshold}m")
+        
         # Process data for interactive visualization
         try:
-            result_data = process_gpx_data(points1, points2, filepath1, filepath2)
+            result_data = process_gpx_data(points1, points2, filepath1, filepath2, interpolation_distance, difference_threshold)
         except Exception as e:
             print(f"Error processing GPX data: {e}")
             return jsonify({'error': f'Error processing GPX data: {str(e)}'}), 500

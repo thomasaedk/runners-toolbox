@@ -61,7 +61,14 @@
     "showDirectionsRoute1": "Arrows (Route 1)",
     "showDirectionsRoute2": "Arrows (Route 2)",
     "enterFullscreen": "Enter fullscreen mode",
-    "exitFullscreen": "Exit fullscreen mode"
+    "exitFullscreen": "Exit fullscreen mode",
+    "advancedSettings": "Advanced Settings",
+    "interpolationDistance": "Interpolation Distance",
+    "interpolationDescription": "Average distance between interpolated track points. Lower values provide more detailed analysis but require more processing time.",
+    "differenceThreshold": "Difference Threshold",
+    "thresholdDescription": "Maximum distance between routes to be considered similar. Points farther apart than this threshold will be marked as significant differences.",
+    "commonSegments": "Common Segments",
+    "showCommonSegments": "Show Common Segments"
   },
   "placeholderTool": {
     "comingSoon": "This tool is coming soon! It will provide additional functionality for runners.",

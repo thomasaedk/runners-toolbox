@@ -61,7 +61,14 @@
     "showDirectionsRoute1": "Pile (Rute 1)",
     "showDirectionsRoute2": "Pile (Rute 2)",
     "enterFullscreen": "Gå til fuldskærm",
-    "exitFullscreen": "Forlad fuldskærm"
+    "exitFullscreen": "Forlad fuldskærm",
+    "advancedSettings": "Avancerede Indstillinger",
+    "interpolationDistance": "Interpolationsafstand",
+    "interpolationDescription": "Gennemsnitlig afstand mellem interpolerede rutepunkter. Lavere værdier giver mere detaljeret analyse, men kræver mere behandlingstid.",
+    "differenceThreshold": "Forskelstærskel",
+    "thresholdDescription": "Maksimal afstand mellem ruter for at blive betragtet som ens. Punkter længere fra hinanden end denne tærskel vil blive markeret som betydelige forskelle.",
+    "commonSegments": "Fælles Segmenter",
+    "showCommonSegments": "Vis Fælles Segmenter"
   },
   "placeholderTool": {
     "comingSoon": "Dette værktøj kommer snart! Det vil give yderligere funktionalitet til løbere.",
