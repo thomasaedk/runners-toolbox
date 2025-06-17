@@ -6,7 +6,11 @@ const DualMapView = ({
   routeData, 
   mapType = 'satellite',
   showOverlaps = true,
-  onMapTypeChange
+  onMapTypeChange,
+  interpolationDistance = 10,
+  differenceThreshold = 50,
+  onInterpolationDistanceChange,
+  onDifferenceThresholdChange
 }) => {
   const { t } = useTranslation()
   const [combinedKey, setCombinedKey] = useState(0) // Force remount of combined view
@@ -14,10 +18,12 @@ const DualMapView = ({
   const [showDirections, setShowDirections] = useState({ route1: false, route2: false }) // Internal state for directions per route - disabled by default
   const [routeVisibility, setRouteVisibility] = useState({ route1: true, route2: true }) // Route visibility state
   const [showKilometerMarkers, setShowKilometerMarkers] = useState({ route1: true, route2: true }) // Kilometer marker state - enabled by default
+  const [showStartEndMarkers, setShowStartEndMarkers] = useState(true) // Start/end marker state - enabled by default
   const [highlightDifferences, setHighlightDifferences] = useState(true) // Difference highlighting overlay - enabled by default
   const [showDifferenceBoxes, setShowDifferenceBoxes] = useState(true) // Show difference area boxes - enabled by default
   const [isFullscreen, setIsFullscreen] = useState(false) // Fullscreen state
   const [isMobile, setIsMobile] = useState(false) // Mobile device detection
+  const [showAdvancedSettings, setShowAdvancedSettings] = useState(false) // Advanced settings visibility
   
   const map1Ref = useRef()
   
@@ -128,7 +134,7 @@ const DualMapView = ({
                 checked={routeVisibility.route1}
                 onChange={() => toggleRouteVisibility('route1')}
               />
-              <span style={{ color: 'red' }}>{routeData?.route1?.name}</span>
+              <span style={{ color: 'red' }} className="truncate-filename" title={routeData?.route1?.name}>{routeData?.route1?.name}</span>
             </label>
             <label className="toggle-control">
               <input
@@ -136,7 +142,7 @@ const DualMapView = ({
                 checked={routeVisibility.route2}
                 onChange={() => toggleRouteVisibility('route2')}
               />
-              <span style={{ color: 'blue' }}>{routeData?.route2?.name}</span>
+              <span style={{ color: 'blue' }} className="truncate-filename" title={routeData?.route2?.name}>{routeData?.route2?.name}</span>
             </label>
             <label className="toggle-control">
               <input
@@ -168,6 +174,14 @@ const DualMapView = ({
                 onChange={(e) => setShowKilometerMarkers(prev => ({ ...prev, route2: e.target.checked }))}
               />
               {t('gpxCompare.kmMarkersRoute2')}
+            </label>
+            <label className="toggle-control">
+              <input
+                type="checkbox"
+                checked={showStartEndMarkers}
+                onChange={(e) => setShowStartEndMarkers(e.target.checked)}
+              />
+              Show Start/End Markers
             </label>
           </div>
           
@@ -223,6 +237,7 @@ const DualMapView = ({
             showOverlaps={showOverlaps}
             backgroundOpacity={mapBackgroundOpacity}
             showKilometerMarkers={showKilometerMarkers}
+            showStartEndMarkers={showStartEndMarkers}
             highlightDifferences={highlightDifferences}
             showDifferenceBoxes={showDifferenceBoxes}
           />
@@ -233,48 +248,7 @@ const DualMapView = ({
 
   return (
     <div className={`dual-map-container ${isFullscreen ? 'fullscreen' : ''}`}>
-      {/* Map Controls */}
-      <div className="map-controls">
-        
-        
-        <div className="control-group">
-          <label className="toggle-control">
-            <input
-              type="checkbox"
-              checked={showKilometerMarkers.route1}
-              onChange={(e) => setShowKilometerMarkers(prev => ({ ...prev, route1: e.target.checked }))}
-            />
-            {t('gpxCompare.kmMarkersRoute1')}
-          </label>
-          <label className="toggle-control">
-            <input
-              type="checkbox"
-              checked={showKilometerMarkers.route2}
-              onChange={(e) => setShowKilometerMarkers(prev => ({ ...prev, route2: e.target.checked }))}
-            />
-            {t('gpxCompare.kmMarkersRoute2')}
-          </label>
-        </div>
-        
-        
-        <div className="control-group">
-          <label className="opacity-control">
-            <span className="opacity-label">{t('gpxCompare.mapOpacity', 'Map Opacity')}</span>
-            <input
-              type="range"
-              min="0"
-              max="1"
-              step="0.1"
-              value={mapBackgroundOpacity}
-              onChange={(e) => setMapBackgroundOpacity(parseFloat(e.target.value))}
-              className="opacity-slider"
-            />
-            <span className="opacity-value">{Math.round(mapBackgroundOpacity * 100)}%</span>
-          </label>
-        </div>
-      </div>
-      
-      {/* Map Background Controls */}
+      {/* Map Background Controls - Keep at top */}
       <div className="map-background-controls">
         <h3>{t('gpxCompare.mapBackground')}</h3>
         <div className="map-type-toggle">
@@ -293,6 +267,119 @@ const DualMapView = ({
         </div>
       </div>
       
+      {/* Advanced Settings - Expandable Section */}
+      <div className="advanced-settings">
+        <button 
+          className="advanced-settings-toggle"
+          onClick={() => setShowAdvancedSettings(!showAdvancedSettings)}
+        >
+          ⚙️ Advanced Settings {showAdvancedSettings ? '▼' : '▶'}
+        </button>
+        
+        {showAdvancedSettings && (
+          <div className="advanced-settings-content">
+            {/* Processing Parameters */}
+            <div className="advanced-section">
+              <h4 className="advanced-section-title">Processing Parameters</h4>
+              
+              <div className="advanced-setting-item">
+                <div className="setting-header">
+                  <label className="setting-label">{t('gpxCompare.interpolationDistance')}</label>
+                  <div className="setting-input-group">
+                    <input
+                      type="number"
+                      value={interpolationDistance}
+                      onChange={(e) => onInterpolationDistanceChange && onInterpolationDistanceChange(e.target.value)}
+                      min="1"
+                      max="100"
+                      step="1"
+                      className="setting-number-input"
+                    />
+                    <span className="setting-unit">meters</span>
+                  </div>
+                </div>
+                <p className="setting-description">
+                  {t('gpxCompare.interpolationDescription')}
+                </p>
+              </div>
+              
+              <div className="advanced-setting-item">
+                <div className="setting-header">
+                  <label className="setting-label">{t('gpxCompare.differenceThreshold')}</label>
+                  <div className="setting-input-group">
+                    <input
+                      type="number"
+                      value={differenceThreshold}
+                      onChange={(e) => onDifferenceThresholdChange && onDifferenceThresholdChange(e.target.value)}
+                      min="0"
+                      max="1000"
+                      step="5"
+                      className="setting-number-input"
+                    />
+                    <span className="setting-unit">meters</span>
+                  </div>
+                </div>
+                <p className="setting-description">
+                  {t('gpxCompare.thresholdDescription')}
+                </p>
+              </div>
+            </div>
+            
+            {/* Display Options */}
+            <div className="advanced-section">
+              <h4 className="advanced-section-title">Display Options</h4>
+              
+              <div className="advanced-setting-item">
+                <div className="setting-checkboxes">
+                  <label className="setting-checkbox">
+                    <input
+                      type="checkbox"
+                      checked={showKilometerMarkers.route1}
+                      onChange={(e) => setShowKilometerMarkers(prev => ({ ...prev, route1: e.target.checked }))}
+                    />
+                    <span className="checkbox-label">{t('gpxCompare.kmMarkersRoute1')}</span>
+                  </label>
+                  <label className="setting-checkbox">
+                    <input
+                      type="checkbox"
+                      checked={showKilometerMarkers.route2}
+                      onChange={(e) => setShowKilometerMarkers(prev => ({ ...prev, route2: e.target.checked }))}
+                    />
+                    <span className="checkbox-label">{t('gpxCompare.kmMarkersRoute2')}</span>
+                  </label>
+                  <label className="setting-checkbox">
+                    <input
+                      type="checkbox"
+                      checked={showStartEndMarkers}
+                      onChange={(e) => setShowStartEndMarkers(e.target.checked)}
+                    />
+                    <span className="checkbox-label">Show Start/End Markers</span>
+                  </label>
+                </div>
+              </div>
+              
+              <div className="advanced-setting-item">
+                <div className="setting-header">
+                  <label className="setting-label">{t('gpxCompare.mapOpacity', 'Map Opacity')}</label>
+                  <div className="setting-slider-group">
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.1"
+                      value={mapBackgroundOpacity}
+                      onChange={(e) => setMapBackgroundOpacity(parseFloat(e.target.value))}
+                      className="setting-slider"
+                    />
+                    <span className="setting-slider-value">{Math.round(mapBackgroundOpacity * 100)}%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+      
       {/* Route Legend */}
       <div className="route-legend">
         <div 
@@ -307,7 +394,7 @@ const DualMapView = ({
               opacity: routeVisibility.route1 ? 1 : 0.3
             }}
           ></div>
-          <span className="route-name">{routeData.route1.name}</span>
+          <span className="route-name" title={routeData.route1.name}>{routeData.route1.name}</span>
           <span className="visibility-indicator">
             {routeVisibility.route1 ? '👁️' : '🚫'}
           </span>
@@ -324,7 +411,7 @@ const DualMapView = ({
               opacity: routeVisibility.route2 ? 1 : 0.3
             }}
           ></div>
-          <span className="route-name">{routeData.route2.name}</span>
+          <span className="route-name" title={routeData.route2.name}>{routeData.route2.name}</span>
           <span className="visibility-indicator">
             {routeVisibility.route2 ? '👁️' : '🚫'}
           </span>
@@ -387,29 +474,13 @@ const DualMapView = ({
             showOverlaps={showOverlaps}
             backgroundOpacity={mapBackgroundOpacity}
             showKilometerMarkers={showKilometerMarkers}
+            showStartEndMarkers={showStartEndMarkers}
             highlightDifferences={highlightDifferences}
             showDifferenceBoxes={showDifferenceBoxes}
           />
         </div>
       </div>
       
-      {/* Stats Panel */}
-      <div className="stats-panel">
-        <div className="stat-item">
-          <span className="stat-label">{t('gpxCompare.totalPoints')}:</span>
-          <span className="stat-value">
-            {routeData.route1.points.length + routeData.route2.points.length}
-          </span>
-        </div>
-        
-        {routeData.overlaps && routeData.overlaps.length > 0 && (
-          <div className="stat-item">
-            <span className="stat-label">{t('gpxCompare.overlapPoints')}:</span>
-            <span className="stat-value">{routeData.overlaps.length}</span>
-          </div>
-        )}
-        
-      </div>
     </div>
   )
 }

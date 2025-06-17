@@ -97,11 +97,65 @@ const calculateOffsetPoint = (lat, lon, bearing, offsetMeters) => {
 
 // Process routes to create side-by-side rendering for overlapping segments
 const processRoutesForSideBySideRendering = (route1, route2) => {
-  // For now, disable the side-by-side rendering to avoid loops and artifacts
-  // Return original routes unchanged
+  if (!route1 || !route2 || !route1.points || !route2.points) {
+    return {
+      route1Points: route1?.points?.map(p => [p.lat, p.lon]) || [],
+      route2Points: route2?.points?.map(p => [p.lat, p.lon]) || []
+    }
+  }
+
+  const OVERLAP_THRESHOLD = 15 // meters
+  const OFFSET_DISTANCE = 8 // meters
+  
+  // Simple, safe approach: only apply small consistent offsets to avoid loops
+  const route1Points = route1.points.map(p => [p.lat, p.lon])
+  const route2Points = route2.points.map(p => [p.lat, p.lon])
+  
+  // Quick overlap check with much larger sampling to avoid performance issues
+  let hasSignificantOverlap = false
+  const sampleRate = Math.max(20, Math.floor(route1.points.length / 50)) // Sample less frequently
+  
+  for (let i = 0; i < route1.points.length && !hasSignificantOverlap; i += sampleRate) {
+    const r1Point = route1.points[i]
+    
+    for (let j = 0; j < route2.points.length; j += sampleRate) {
+      const r2Point = route2.points[j]
+      const distance = calculateDistance(r1Point.lat, r1Point.lon, r2Point.lat, r2Point.lon) * 1000
+      
+      if (distance < OVERLAP_THRESHOLD) {
+        hasSignificantOverlap = true
+        break
+      }
+    }
+  }
+  
+  // If routes overlap, apply very simple, consistent offset to entire routes
+  if (hasSignificantOverlap) {
+    // Calculate overall direction of each route (first to last point)
+    const r1Start = route1.points[0]
+    const r1End = route1.points[route1.points.length - 1]
+    const r2Start = route2.points[0]
+    const r2End = route2.points[route2.points.length - 1]
+    
+    const overallBearing1 = calculateBearing(r1Start.lat, r1Start.lon, r1End.lat, r1End.lon)
+    const overallBearing2 = calculateBearing(r2Start.lat, r2Start.lon, r2End.lat, r2End.lon)
+    
+    // Apply small, consistent offset to all points (simple and smooth)
+    return {
+      route1Points: route1.points.map(point => {
+        const offsetPoint = calculateOffsetPoint(point.lat, point.lon, overallBearing1, -OFFSET_DISTANCE * 0.5)
+        return [offsetPoint.lat, offsetPoint.lon]
+      }),
+      route2Points: route2.points.map(point => {
+        const offsetPoint = calculateOffsetPoint(point.lat, point.lon, overallBearing2, OFFSET_DISTANCE * 0.5)
+        return [offsetPoint.lat, offsetPoint.lon]
+      })
+    }
+  }
+  
   return {
-    route1Points: route1?.points?.map(p => [p.lat, p.lon]) || [],
-    route2Points: route2?.points?.map(p => [p.lat, p.lon]) || []
+    route1Points: route1Points.map(p => [p.lat, p.lon]),
+    route2Points: route2Points.map(p => [p.lat, p.lon])
   }
 }
 
@@ -241,6 +295,7 @@ const InteractiveMap = forwardRef(({
   showOverlaps = true,
   backgroundOpacity = 0.3,
   showKilometerMarkers = { route1: false, route2: false },
+  showStartEndMarkers = true,
   showCommonSegments = true,
   highlightDifferences = true,
   showDifferenceBoxes = true
@@ -317,42 +372,47 @@ const InteractiveMap = forwardRef(({
           opacity={backgroundOpacity}
         />
         
-        {/* Route 1 - Red line with better visibility for overlaps */}
+        {/* Route outlines - render first */}
         {route1 && route1Points && route1Points.length > 0 && (
-          <>
-            {/* White outline for better visibility when routes overlap */}
-            <Polyline
-              positions={route1Points}
-              color="white"
-              weight={6}
-              opacity={0.8}
-            />
-            <Polyline
-              positions={route1Points}
-              color="red"
-              weight={4}
-              opacity={0.9}
-            />
-          </>
+          <Polyline
+            positions={route1Points}
+            color="white"
+            weight={6}
+            opacity={0.7}
+            pane="overlayPane"
+          />
         )}
         
-        {/* Route 2 - Blue line with better visibility for overlaps */}
         {route2 && route2Points && route2Points.length > 0 && (
-          <>
-            {/* White outline for better visibility when routes overlap */}
-            <Polyline
-              positions={route2Points}
-              color="white"
-              weight={6}
-              opacity={0.8}
-            />
-            <Polyline
-              positions={route2Points}
-              color="blue"
-              weight={4}
-              opacity={0.9}
-            />
-          </>
+          <Polyline
+            positions={route2Points}
+            color="white"
+            weight={6}
+            opacity={0.7}
+            pane="overlayPane"
+          />
+        )}
+        
+        {/* Route 1 - Red line (always renders first to be underneath) */}
+        {route1 && route1Points && route1Points.length > 0 && (
+          <Polyline
+            positions={route1Points}
+            color="red"
+            weight={4}
+            opacity={0.8}
+            pane="overlayPane"
+          />
+        )}
+        
+        {/* Route 2 - Blue line with transparency so red shows through */}
+        {route2 && route2Points && route2Points.length > 0 && (
+          <Polyline
+            positions={route2Points}
+            color="blue"
+            weight={4}
+            opacity={0.7}
+            pane="overlayPane"
+          />
         )}
         
         {/* Merged boxes around difference areas */}
@@ -615,7 +675,7 @@ const InteractiveMap = forwardRef(({
         })()}
         
         {/* Start/End Markers for Route 1 */}
-        {route1 && (
+        {showStartEndMarkers && route1 && (
           <>
             <Marker
               position={[route1.start.lat, route1.start.lon]}
@@ -640,7 +700,7 @@ const InteractiveMap = forwardRef(({
         )}
         
         {/* Start/End Markers for Route 2 */}
-        {route2 && (
+        {showStartEndMarkers && route2 && (
           <>
             <Marker
               position={[route2.start.lat, route2.start.lon]}

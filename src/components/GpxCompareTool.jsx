@@ -63,6 +63,12 @@ function GpxCompareTool({ onStateChange }) {
   const handleFileChange = (fileNumber, event) => {
     const file = event.target.files[0]
     if (file && file.name.endsWith('.gpx')) {
+      // Check file size (3MB limit)
+      const maxSizeInBytes = 3 * 1024 * 1024 // 3MB
+      if (file.size > maxSizeInBytes) {
+        alert(t('gpxCompare.errors.fileTooLarge', 'File is too large. Maximum file size is 3MB.'))
+        return
+      }
       setFiles(prev => ({ ...prev, [fileNumber]: file }))
     } else {
       alert(t('gpxCompare.errors.onlyGpxFiles'))
@@ -90,6 +96,12 @@ function GpxCompareTool({ onStateChange }) {
                        file.type === 'text/xml'
     
     if (file && isValidGpx) {
+      // Check file size (3MB limit)
+      const maxSizeInBytes = 3 * 1024 * 1024 // 3MB
+      if (file.size > maxSizeInBytes) {
+        alert(t('gpxCompare.errors.fileTooLarge', 'File is too large. Maximum file size is 3MB.'))
+        return
+      }
       setFiles(prev => ({ ...prev, [fileNumber]: file }))
     } else {
       alert(t('gpxCompare.errors.onlyGpxFilesDrop'))
@@ -310,51 +322,6 @@ function GpxCompareTool({ onStateChange }) {
         </div>
       </div>
 
-      {/* Configuration Parameters */}
-      <div className="config-section">
-        <h3>{t('gpxCompare.advancedSettings')}</h3>
-        <div className="config-grid">
-          <div className="config-item">
-            <label htmlFor="interpolation-distance">
-              {t('gpxCompare.interpolationDistance')}
-            </label>
-            <input
-              id="interpolation-distance"
-              type="number"
-              value={interpolationDistance}
-              onChange={(e) => handleInterpolationDistanceChange(e.target.value)}
-              min="1"
-              max="100"
-              step="1"
-              className="config-input"
-            />
-            <span className="config-unit">meters</span>
-            <p className="config-description">
-              {t('gpxCompare.interpolationDescription')}
-            </p>
-          </div>
-          
-          <div className="config-item">
-            <label htmlFor="difference-threshold">
-              {t('gpxCompare.differenceThreshold')}
-            </label>
-            <input
-              id="difference-threshold"
-              type="number"
-              value={differenceThreshold}
-              onChange={(e) => handleDifferenceThresholdChange(e.target.value)}
-              min="0"
-              max="1000"
-              step="5"
-              className="config-input"
-            />
-            <span className="config-unit">meters</span>
-            <p className="config-description">
-              {t('gpxCompare.thresholdDescription')}
-            </p>
-          </div>
-        </div>
-      </div>
 
       <div className="button-container">
         <button 
@@ -377,6 +344,10 @@ function GpxCompareTool({ onStateChange }) {
             mapType={mapType}
             showOverlaps={true}
             onMapTypeChange={handleMapTypeChange}
+            interpolationDistance={interpolationDistance}
+            differenceThreshold={differenceThreshold}
+            onInterpolationDistanceChange={handleInterpolationDistanceChange}
+            onDifferenceThresholdChange={handleDifferenceThresholdChange}
           />
           
         </div>

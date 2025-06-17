@@ -904,6 +904,16 @@ body {
   font-size: 0.9rem;
   color: #4b5563;
   cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.toggle-control span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .toggle-control input[type="checkbox"] {
@@ -979,7 +989,8 @@ body {
 
 .route-legend {
   display: flex;
-  gap: 1.5rem;
+  flex-wrap: wrap;
+  gap: 0.75rem;
   padding: 1rem;
   background: rgba(255, 255, 255, 0.9);
   border-radius: 12px;
@@ -995,6 +1006,8 @@ body {
   padding: 0.5rem 0.75rem;
   border-radius: 8px;
   transition: all 0.3s ease;
+  flex: 1;
+  min-width: 0;
 }
 
 .route-legend-item:hover {
@@ -1027,6 +1040,213 @@ body {
   font-weight: 500;
   color: #374151;
   font-size: 0.95rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+
+/* Advanced Settings Styles */
+.advanced-settings {
+  margin-top: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.advanced-settings-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(102, 126, 234, 0.2);
+  border-radius: 8px;
+  color: #4b5563;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+.advanced-settings-toggle:hover {
+  background: rgba(102, 126, 234, 0.05);
+  border-color: rgba(102, 126, 234, 0.3);
+  color: #667eea;
+}
+
+.advanced-settings-content {
+  margin-top: 0.75rem;
+  padding: 1.25rem;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(102, 126, 234, 0.1);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.advanced-section {
+  margin-bottom: 1.5rem;
+}
+
+.advanced-section:last-child {
+  margin-bottom: 0;
+}
+
+.advanced-section-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #374151;
+  margin: 0 0 1rem 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(102, 126, 234, 0.1);
+}
+
+.advanced-setting-item {
+  margin-bottom: 1rem;
+}
+
+.advanced-setting-item:last-child {
+  margin-bottom: 0;
+}
+
+.setting-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.setting-label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #4b5563;
+}
+
+.setting-input-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.setting-number-input {
+  width: 80px;
+  padding: 0.375rem 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  text-align: center;
+  background: white;
+  transition: border-color 0.2s ease;
+}
+
+.setting-number-input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+}
+
+.setting-unit {
+  font-size: 0.8rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.setting-description {
+  font-size: 0.8rem;
+  color: #6b7280;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.setting-checkboxes {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.setting-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.setting-checkbox input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #667eea;
+}
+
+.checkbox-label {
+  font-size: 0.9rem;
+  color: #4b5563;
+}
+
+.setting-slider-group {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+  max-width: 280px;
+}
+
+.setting-slider {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: #d1d5db;
+  outline: none;
+  appearance: none;
+  cursor: pointer;
+}
+
+.setting-slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);
+  transition: all 0.2s ease;
+}
+
+.setting-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 8px rgba(102, 126, 234, 0.4);
+}
+
+/* Utility classes for text truncation */
+.truncate-filename {
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: inline-block;
+}
+
+.setting-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);
+  transition: all 0.2s ease;
+}
+
+.setting-slider::-moz-range-thumb:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 8px rgba(102, 126, 234, 0.4);
+}
+
+.setting-slider-value {
+  font-size: 0.8rem;
+  color: #667eea;
+  font-weight: 600;
+  min-width: 35px;
+  text-align: center;
 }
 
 .maps-container {
@@ -1360,7 +1580,7 @@ body:has(.dual-map-container.fullscreen) .app {
 .fullscreen-exit-button {
   position: absolute;
   top: 1rem;
-  right: 4rem;
+  right: 1rem;
   background: rgba(0, 0, 0, 0.7);
   border: 1px solid rgba(255, 255, 255, 0.3);
   color: white;
@@ -1368,7 +1588,7 @@ body:has(.dual-map-container.fullscreen) .app {
   border-radius: 50%;
   cursor: pointer;
   font-size: 1.5rem;
-  z-index: 9999;
+  z-index: 10000;
   transition: all 0.3s ease;
   width: 3rem;
   height: 3rem;
@@ -1385,7 +1605,7 @@ body:has(.dual-map-container.fullscreen) .app {
 .fullscreen-controls {
   display: flex;
   gap: 2rem;
-  padding: 1rem 2rem;
+  padding: 1rem 6rem 1rem 2rem;
   background: rgba(0, 0, 0, 0.8);
   backdrop-filter: blur(10px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
@@ -1463,7 +1683,7 @@ body:has(.dual-map-container.fullscreen) .app {
 /* Mobile responsive styles for fullscreen */
 @media (max-width: 768px) {
   .fullscreen-controls {
-    padding: 0.75rem 1rem;
+    padding: 0.75rem 4rem 0.75rem 1rem;
     gap: 1rem;
     flex-direction: column;
     align-items: stretch;
