@@ -63,6 +63,48 @@ const calculateDistance = (lat1, lon1, lat2, lon2) => {
   return R * c
 }
 
+// Calculate bearing between two points
+const calculateBearing = (lat1, lon1, lat2, lon2) => {
+  const dLon = (lon2 - lon1) * Math.PI / 180
+  const lat1Rad = lat1 * Math.PI / 180
+  const lat2Rad = lat2 * Math.PI / 180
+  
+  const y = Math.sin(dLon) * Math.cos(lat2Rad)
+  const x = Math.cos(lat1Rad) * Math.sin(lat2Rad) - Math.sin(lat1Rad) * Math.cos(lat2Rad) * Math.cos(dLon)
+  
+  return Math.atan2(y, x)
+}
+
+// Calculate perpendicular offset point for side-by-side rendering
+const calculateOffsetPoint = (lat, lon, bearing, offsetMeters) => {
+  const R = 6371000 // Earth's radius in meters
+  const offsetBearing = bearing + Math.PI / 2 // Perpendicular to route direction
+  
+  const latRad = lat * Math.PI / 180
+  const lonRad = lon * Math.PI / 180
+  
+  const newLatRad = Math.asin(Math.sin(latRad) * Math.cos(offsetMeters / R) + 
+                             Math.cos(latRad) * Math.sin(offsetMeters / R) * Math.cos(offsetBearing))
+  
+  const newLonRad = lonRad + Math.atan2(Math.sin(offsetBearing) * Math.sin(offsetMeters / R) * Math.cos(latRad),
+                                       Math.cos(offsetMeters / R) - Math.sin(latRad) * Math.sin(newLatRad))
+  
+  return {
+    lat: newLatRad * 180 / Math.PI,
+    lon: newLonRad * 180 / Math.PI
+  }
+}
+
+// Process routes to create side-by-side rendering for overlapping segments
+const processRoutesForSideBySideRendering = (route1, route2) => {
+  // For now, disable the side-by-side rendering to avoid loops and artifacts
+  // Return original routes unchanged
+  return {
+    route1Points: route1?.points?.map(p => [p.lat, p.lon]) || [],
+    route2Points: route2?.points?.map(p => [p.lat, p.lon]) || []
+  }
+}
+
 // Generate kilometer markers for a route
 const generateKilometerMarkers = (points, color) => {
   if (!points || points.length < 2) return []
@@ -241,9 +283,8 @@ const InteractiveMap = forwardRef(({
   
   const { route1, route2, bounds } = routeData
   
-  // Convert points to Leaflet format (handle null routes)
-  const route1Points = route1 ? route1.points.map(p => [p.lat, p.lon]) : []
-  const route2Points = route2 ? route2.points.map(p => [p.lat, p.lon]) : []
+  // Process routes for side-by-side rendering when both routes exist
+  const { route1Points, route2Points } = processRoutesForSideBySideRendering(route1, route2)
   
   
   // Calculate center point
@@ -276,24 +317,42 @@ const InteractiveMap = forwardRef(({
           opacity={backgroundOpacity}
         />
         
-        {/* Route 1 - Simple red line */}
+        {/* Route 1 - Red line with better visibility for overlaps */}
         {route1 && route1Points && route1Points.length > 0 && (
-          <Polyline
-            positions={route1Points}
-            color="red"
-            weight={4}
-            opacity={0.9}
-          />
+          <>
+            {/* White outline for better visibility when routes overlap */}
+            <Polyline
+              positions={route1Points}
+              color="white"
+              weight={6}
+              opacity={0.8}
+            />
+            <Polyline
+              positions={route1Points}
+              color="red"
+              weight={4}
+              opacity={0.9}
+            />
+          </>
         )}
         
-        {/* Route 2 - Simple blue line */}
+        {/* Route 2 - Blue line with better visibility for overlaps */}
         {route2 && route2Points && route2Points.length > 0 && (
-          <Polyline
-            positions={route2Points}
-            color="blue"
-            weight={4}
-            opacity={0.9}
-          />
+          <>
+            {/* White outline for better visibility when routes overlap */}
+            <Polyline
+              positions={route2Points}
+              color="white"
+              weight={6}
+              opacity={0.8}
+            />
+            <Polyline
+              positions={route2Points}
+              color="blue"
+              weight={4}
+              opacity={0.9}
+            />
+          </>
         )}
         
         {/* Merged boxes around difference areas */}
