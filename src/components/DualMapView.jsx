@@ -8,9 +8,10 @@ const DualMapView = ({
   showOverlaps = true,
   onMapTypeChange,
   interpolationDistance = 10,
-  differenceThreshold = 30,
+  differenceThreshold = 40,
   onInterpolationDistanceChange,
-  onDifferenceThresholdChange
+  onDifferenceThresholdChange,
+  onResetToDefaults
 }) => {
   const { t } = useTranslation()
   const [combinedKey, setCombinedKey] = useState(0) // Force remount of combined view
@@ -375,6 +376,22 @@ const DualMapView = ({
                     <span className="setting-slider-value">{Math.round(mapBackgroundOpacity * 100)}%</span>
                   </div>
                 </div>
+              </div>
+            </div>
+            
+            {/* Reset Button */}
+            <div className="advanced-section">
+              <div className="advanced-setting-item">
+                <button 
+                  className="reset-defaults-button"
+                  onClick={onResetToDefaults}
+                  disabled={!onResetToDefaults}
+                >
+                  🔄 {t('gpxCompare.resetToDefaults', 'Reset to Defaults')}
+                </button>
+                <p className="setting-description">
+                  {t('gpxCompare.resetDescription', 'Reset all settings to their default values')}
+                </p>
               </div>
             </div>
           </div>

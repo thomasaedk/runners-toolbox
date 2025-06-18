@@ -481,7 +481,8 @@ const InteractiveMap = forwardRef(({
           
           // Collect all difference area boxes from both routes
           const allDifferenceBoxes = []
-          const thresholdInDegrees = differenceThreshold / 111000 // Convert threshold meters to degrees
+          // Fixed padding size (not dependent on threshold!)
+          const fixedPaddingInDegrees = 50 / 111000 // Fixed 50m padding converted to degrees
           
           // Add Route 1 difference boxes
           if (route1 && route1.segments) {
@@ -494,8 +495,8 @@ const InteractiveMap = forwardRef(({
                 const minLon = Math.min(...segmentLons)
                 const maxLon = Math.max(...segmentLons)
                 
-                const latPadding = Math.max((maxLat - minLat) * 0.3, thresholdInDegrees)
-                const lonPadding = Math.max((maxLon - minLon) * 0.3, thresholdInDegrees)
+                const latPadding = Math.max((maxLat - minLat) * 0.40, fixedPaddingInDegrees)
+                const lonPadding = Math.max((maxLon - minLon) * 0.40, fixedPaddingInDegrees)
                 
                 allDifferenceBoxes.push({
                   minLat: minLat - latPadding,
@@ -518,8 +519,8 @@ const InteractiveMap = forwardRef(({
                 const minLon = Math.min(...segmentLons)
                 const maxLon = Math.max(...segmentLons)
                 
-                const latPadding = Math.max((maxLat - minLat) * 0.3, thresholdInDegrees)
-                const lonPadding = Math.max((maxLon - minLon) * 0.3, thresholdInDegrees)
+                const latPadding = Math.max((maxLat - minLat) * 0.40, fixedPaddingInDegrees)
+                const lonPadding = Math.max((maxLon - minLon) * 0.40, fixedPaddingInDegrees)
                 
                 allDifferenceBoxes.push({
                   minLat: minLat - latPadding,
@@ -557,7 +558,9 @@ const InteractiveMap = forwardRef(({
         {highlightDifferences && (() => {
           // Get merged difference boxes (reuse the same logic)
           const allDifferenceBoxes = []
-          const thresholdInDegrees = differenceThreshold / 111000
+          // Threshold only determines which segments are different, not box size
+          // const thresholdInDegrees = differenceThreshold / 111000 // REMOVED - was incorrectly affecting box size
+          const fixedPaddingInDegrees = 50 / 111000 // Fixed 50m padding converted to degrees
           
           // Helper functions (same as above)
           const boxesOverlap = (box1, box2) => {
@@ -617,8 +620,8 @@ const InteractiveMap = forwardRef(({
                 const maxLat = Math.max(...segmentLats)
                 const minLon = Math.min(...segmentLons)
                 const maxLon = Math.max(...segmentLons)
-                const latPadding = Math.max((maxLat - minLat) * 0.3, thresholdInDegrees)
-                const lonPadding = Math.max((maxLon - minLon) * 0.3, thresholdInDegrees)
+                const latPadding = Math.max((maxLat - minLat) * 0.40, fixedPaddingInDegrees)
+                const lonPadding = Math.max((maxLon - minLon) * 0.40, fixedPaddingInDegrees)
                 
                 allDifferenceBoxes.push({
                   minLat: minLat - latPadding,
@@ -639,8 +642,8 @@ const InteractiveMap = forwardRef(({
                 const maxLat = Math.max(...segmentLats)
                 const minLon = Math.min(...segmentLons)
                 const maxLon = Math.max(...segmentLons)
-                const latPadding = Math.max((maxLat - minLat) * 0.3, thresholdInDegrees)
-                const lonPadding = Math.max((maxLon - minLon) * 0.3, thresholdInDegrees)
+                const latPadding = Math.max((maxLat - minLat) * 0.40, fixedPaddingInDegrees)
+                const lonPadding = Math.max((maxLon - minLon) * 0.40, fixedPaddingInDegrees)
                 
                 allDifferenceBoxes.push({
                   minLat: minLat - latPadding,

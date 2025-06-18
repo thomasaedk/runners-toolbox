@@ -21,8 +21,60 @@ from shapely.geometry import LineString, Point
 import pandas as pd
 import json
 import math
+import time
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from multiprocessing import cpu_count
+from sklearn.neighbors import BallTree
+import hashlib
+import pickle
+
+# Create cache directory
+CACHE_DIR = os.path.join(os.path.dirname(__file__), 'cache')
+if not os.path.exists(CACHE_DIR):
+    os.makedirs(CACHE_DIR)
+
+def generate_cache_key(points1, points2, interpolation_distance, difference_threshold):
+    """Generate a unique cache key for the given parameters."""
+    # Create a string representation of the key parameters
+    key_data = {
+        'points1_hash': hashlib.md5(str([(p['lat'], p['lon']) for p in points1[:100]]).encode()).hexdigest(),
+        'points2_hash': hashlib.md5(str([(p['lat'], p['lon']) for p in points2[:100]]).encode()).hexdigest(),
+        'interpolation_distance': interpolation_distance,
+        'difference_threshold': difference_threshold,
+        'points1_len': len(points1),
+        'points2_len': len(points2)
+    }
+    
+    # Generate hash of the combined parameters
+    cache_key = hashlib.md5(str(key_data).encode()).hexdigest()
+    return cache_key
+
+def get_cached_result(cache_key):
+    """Retrieve cached result if it exists."""
+    cache_file = os.path.join(CACHE_DIR, f"{cache_key}.pkl")
+    try:
+        if os.path.exists(cache_file):
+            # Check if cache is less than 24 hours old
+            cache_age = time.time() - os.path.getmtime(cache_file)
+            if cache_age < 24 * 3600:  # 24 hours
+                with open(cache_file, 'rb') as f:
+                    return pickle.load(f)
+            else:
+                # Remove old cache file
+                os.remove(cache_file)
+    except Exception as e:
+        print(f"Error reading cache: {e}")
+    
+    return None
+
+def save_cached_result(cache_key, result):
+    """Save result to cache."""
+    cache_file = os.path.join(CACHE_DIR, f"{cache_key}.pkl")
+    try:
+        with open(cache_file, 'wb') as f:
+            pickle.dump(result, f)
+    except Exception as e:
+        print(f"Error saving cache: {e}")
 
 def parse_gpx_file(file_path):
     """Parse a GPX file and extract track points."""
@@ -125,13 +177,134 @@ def interpolate_track_points(points, target_distance_meters=10):
     
     return interpolated_points
 
-def calculate_route_differences_parallel(points1, points2, threshold_meters=30):
-    """Calculate differences between two routes using parallel processing."""
+def analyze_route_complexity(points, sample_size=50):
+    """Analyze route complexity to determine optimal sampling strategy."""
+    if len(points) < 3:
+        return 1.0  # Simple route
+    
+    # Sample points to analyze curvature
+    step = max(1, len(points) // sample_size)
+    sample_points = points[::step]
+    
+    total_curvature = 0
+    for i in range(1, len(sample_points) - 1):
+        prev_point = sample_points[i-1]
+        curr_point = sample_points[i]
+        next_point = sample_points[i+1]
+        
+        # Calculate bearings
+        bearing1 = calculate_bearing(prev_point['lat'], prev_point['lon'], 
+                                   curr_point['lat'], curr_point['lon'])
+        bearing2 = calculate_bearing(curr_point['lat'], curr_point['lon'],
+                                   next_point['lat'], next_point['lon'])
+        
+        # Calculate angular difference (curvature)
+        angle_diff = abs(bearing2 - bearing1)
+        if angle_diff > 180:
+            angle_diff = 360 - angle_diff
+        
+        total_curvature += angle_diff
+    
+    # Normalize curvature (higher = more complex)
+    avg_curvature = total_curvature / max(1, len(sample_points) - 2)
+    complexity = min(avg_curvature / 45.0, 2.0)  # Scale 0-2
+    
+    return complexity
+
+def calculate_route_differences_with_spatial_index(points1, points2, threshold_meters=30):
+    """Calculate differences between two routes using adaptive spatial indexing for optimal accuracy."""
     if len(points1) < 2 or len(points2) < 2:
         return []
     
+    # Analyze route complexity to determine sampling strategy
+    complexity1 = analyze_route_complexity(points1)
+    complexity2 = analyze_route_complexity(points2)
+    max_complexity = max(complexity1, complexity2)
+    
+    # Adaptive sampling based on complexity and size
+    # For complex routes, use less aggressive sampling to maintain accuracy
+    base_sample_rate = 2 if len(points1) > 2000 else 1
+    
+    # Adjust sampling based on complexity
+    if max_complexity > 1.5:  # Very complex route
+        sample_rate = 1  # No sampling for complex routes
+        sample_rate2 = 1
+    elif max_complexity > 1.0:  # Moderately complex
+        sample_rate = max(1, base_sample_rate // 2)
+        sample_rate2 = max(1, base_sample_rate // 2)
+    else:  # Simple route
+        sample_rate = base_sample_rate
+        sample_rate2 = base_sample_rate
+    
+    # Always use full resolution for small datasets or when high accuracy is needed
+    if len(points1) < 1000:  # Increased from 500 to 1000 for better accuracy
+        sample_rate = 1
+    if len(points2) < 1000:  # Increased from 500 to 1000 for better accuracy
+        sample_rate2 = 1
+    
+    # For threshold < 30m, use higher accuracy
+    if threshold_meters < 30:
+        sample_rate = max(1, sample_rate // 2)  # Use twice as many points
+        print(f"High accuracy mode: threshold < 30m, using sample rate {sample_rate}")
+    
+    print(f"Route complexity: {complexity1:.2f}, {complexity2:.2f} -> Sample rates: {sample_rate}, {sample_rate2}")
+    
+    # Sample points for performance while maintaining accuracy
+    sampled_points1 = [points1[i] for i in range(0, len(points1), sample_rate)]
+    
+    # For route2, build spatial index with ALL points for maximum accuracy
+    # Convert ALL points2 to numpy arrays for BallTree (lat, lon in radians)
+    points2_rad = np.array([[math.radians(p['lat']), math.radians(p['lon'])] for p in points2])
+    
+    # Build spatial index using BallTree with haversine metric on ALL route2 points
+    tree = BallTree(points2_rad, metric='haversine')
+    
+    differences = []
+    
+    for idx, point1 in enumerate(sampled_points1):
+        # Query the spatial index for the nearest neighbor from ALL route2 points
+        point1_rad = np.array([[math.radians(point1['lat']), math.radians(point1['lon'])]])
+        
+        # Find closest point using spatial index (searches ALL route2 points)
+        distances, indices = tree.query(point1_rad, k=1)
+        
+        # Convert distance from radians to meters (Earth's radius = 6371000m)
+        min_distance = distances[0][0] * 6371000
+        closest_idx = indices[0][0]
+        closest_point = points2[closest_idx]  # Get from original points2 array
+        
+        differences.append({
+            'route1_point_idx': int(idx * sample_rate),  # Original index
+            'route1_point': point1,
+            'closest_route2_point': closest_point,
+            'closest_route2_idx': int(closest_idx),  # Direct index in points2
+            'distance': float(min_distance),
+            'exceeds_threshold': bool(min_distance > threshold_meters)
+        })
+    
+    return differences
+
+def calculate_route_differences_parallel(points1, points2, threshold_meters=30):
+    """Calculate differences between two routes using parallel processing with smart sampling."""
+    # Use spatial indexing for better performance when available
+    try:
+        return calculate_route_differences_with_spatial_index(points1, points2, threshold_meters)
+    except Exception as e:
+        print(f"Spatial indexing failed, falling back to parallel processing: {e}")
+        # Fallback to original method if spatial indexing fails
+        return calculate_route_differences_parallel_fallback(points1, points2, threshold_meters)
+
+def calculate_route_differences_parallel_fallback(points1, points2, threshold_meters=30):
+    """Fallback method using parallel processing with smart sampling."""
+    if len(points1) < 2 or len(points2) < 2:
+        return []
+    
+    # Smart sampling: use every 3rd point for large datasets to improve performance
+    sample_rate = 3 if len(points1) > 1000 else 1
+    sample_rate2 = 3 if len(points2) > 1000 else 1
+    
     # Use ThreadPoolExecutor for I/O bound tasks (distance calculations)
-    max_workers = min(16, cpu_count())
+    max_workers = min(12, cpu_count())  # Reduced from 16 to 12 for better memory usage
     
     def find_closest_point_distance(point1_data):
         idx, point1 = point1_data
@@ -139,7 +312,9 @@ def calculate_route_differences_parallel(points1, points2, threshold_meters=30):
         closest_point = None
         closest_idx = None
         
-        for j, point2 in enumerate(points2):
+        # Sample points2 for performance - check every sample_rate2 point
+        for j in range(0, len(points2), sample_rate2):
+            point2 = points2[j]
             distance = calculate_distance(
                 point1['lat'], point1['lon'],
                 point2['lat'], point2['lon']
@@ -148,6 +323,10 @@ def calculate_route_differences_parallel(points1, points2, threshold_meters=30):
                 min_distance = distance
                 closest_point = point2
                 closest_idx = j
+                
+            # Early termination: if we find a very close point, no need to check further
+            if distance < threshold_meters * 0.1:  # 10% of threshold
+                break
         
         return {
             'route1_point_idx': idx,
@@ -159,8 +338,7 @@ def calculate_route_differences_parallel(points1, points2, threshold_meters=30):
         }
     
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        # Sample points to avoid excessive computation
-        sample_rate = 1  # Use every point as specified
+        # Sample points1 for performance
         sampled_points1 = [(i, points1[i]) for i in range(0, len(points1), sample_rate)]
         
         differences = list(executor.map(find_closest_point_distance, sampled_points1))
@@ -203,7 +381,7 @@ def extend_point_along_route(point, next_point, distance_meters):
     }
 
 def create_route_segments_by_difference(points, differences, threshold_meters=50, route_num=1):
-    """Create route segments based on difference analysis."""
+    """Create route segments based on difference analysis with improved accuracy."""
     if not points or not differences:
         return []
     
@@ -211,26 +389,96 @@ def create_route_segments_by_difference(points, differences, threshold_meters=50
     point_difference_map = {}
     
     if route_num == 1:
-        # For route 1, use the difference data directly
+        # For route 1, use the difference data directly and interpolate between sampled points
         for diff in differences:
             idx = diff['route1_point_idx']
             point_difference_map[idx] = diff['exceeds_threshold']
+        
+        # Interpolate difference status for points between sampled points
+        sorted_indices = sorted(point_difference_map.keys())
+        for i in range(len(points)):
+            if i not in point_difference_map:
+                # Find nearest sampled points
+                prev_idx = None
+                next_idx = None
+                
+                for idx in sorted_indices:
+                    if idx < i:
+                        prev_idx = idx
+                    elif idx > i and next_idx is None:
+                        next_idx = idx
+                        break
+                
+                # Improved interpolation: check if we're in a transition zone
+                if prev_idx is not None and next_idx is not None:
+                    prev_status = point_difference_map[prev_idx]
+                    next_status = point_difference_map[next_idx]
+                    
+                    if prev_status == next_status:
+                        # Same status on both sides, use that status
+                        point_difference_map[i] = prev_status
+                    else:
+                        # Transition zone - use more conservative approach
+                        # For transition zones, calculate actual distance to be more precise
+                        curr_point = points[i]
+                        try:
+                            # Use spatial search to get accurate classification
+                            route1_points = [diff['route1_point'] for diff in differences]
+                            if route1_points:
+                                min_dist = float('inf')
+                                for rp in route1_points:
+                                    dist = calculate_distance(curr_point['lat'], curr_point['lon'], 
+                                                            rp['lat'], rp['lon'])
+                                    if dist < min_dist:
+                                        min_dist = dist
+                                point_difference_map[i] = min_dist > threshold_meters
+                            else:
+                                # Fallback: use closer point
+                                if abs(i - prev_idx) <= abs(i - next_idx):
+                                    point_difference_map[i] = prev_status
+                                else:
+                                    point_difference_map[i] = next_status
+                        except:
+                            # Fallback to distance-based decision
+                            if abs(i - prev_idx) <= abs(i - next_idx):
+                                point_difference_map[i] = prev_status
+                            else:
+                                point_difference_map[i] = next_status
+                elif prev_idx is not None:
+                    point_difference_map[i] = point_difference_map[prev_idx]
+                elif next_idx is not None:
+                    point_difference_map[i] = point_difference_map[next_idx]
+                else:
+                    point_difference_map[i] = False  # Default to similar
     else:
-        # For route 2, calculate differences for each point
-        for i, point2 in enumerate(points):
-            min_distance = float('inf')
-            # Find the closest point in route 1
-            for diff in differences:
-                route1_point = diff['route1_point']
-                distance = calculate_distance(
-                    point2['lat'], point2['lon'],
-                    route1_point['lat'], route1_point['lon']
-                )
-                if distance < min_distance:
-                    min_distance = distance
+        # For route 2, use spatial indexing for better accuracy
+        try:
+            # Build spatial index for route 1 points
+            route1_points = [diff['route1_point'] for diff in differences]
+            route1_rad = np.array([[math.radians(p['lat']), math.radians(p['lon'])] for p in route1_points])
+            tree = BallTree(route1_rad, metric='haversine')
             
-            # Point is different if closest distance exceeds threshold
-            point_difference_map[i] = min_distance > threshold_meters
+            for i, point2 in enumerate(points):
+                # Find closest route1 point using spatial index
+                point2_rad = np.array([[math.radians(point2['lat']), math.radians(point2['lon'])]])
+                distances, indices = tree.query(point2_rad, k=1)
+                min_distance = distances[0][0] * 6371000  # Convert to meters
+                
+                point_difference_map[i] = min_distance > threshold_meters
+        except:
+            # Fallback to original method if spatial indexing fails
+            for i, point2 in enumerate(points):
+                min_distance = float('inf')
+                for diff in differences:
+                    route1_point = diff['route1_point']
+                    distance = calculate_distance(
+                        point2['lat'], point2['lon'],
+                        route1_point['lat'], route1_point['lon']
+                    )
+                    if distance < min_distance:
+                        min_distance = distance
+                
+                point_difference_map[i] = min_distance > threshold_meters
     
     segments = []
     current_segment = []
@@ -401,36 +649,60 @@ def smart_marker_positioning(start_point, end_point, other_points, min_distance=
         # Return original points if there's any error
         return start_point, end_point
 
-def process_gpx_data(points1, points2, file1_path, file2_path, interpolation_distance=10, difference_threshold=50):
-    """Process GPX data and return structured data for interactive visualization."""
+def process_gpx_data(points1, points2, file1_path, file2_path, interpolation_distance=10, difference_threshold=40):
+    """Process GPX data and return structured data for interactive visualization with caching."""
     if not points1 or not points2:
         raise ValueError("Both GPX files must contain valid track points")
     
+    # Check cache first
+    cache_key = generate_cache_key(points1, points2, interpolation_distance, difference_threshold)
+    cached_result = get_cached_result(cache_key)
+    
+    if cached_result:
+        print("[CACHE HIT] Using cached result for faster processing...")
+        return cached_result
+    
+    print("[CACHE MISS] Processing GPX data...")
+    
     try:
-        print(f"Original points - Route1: {len(points1)}, Route2: {len(points2)}")
+        print(f"[Step 1/5] Original points - Route1: {len(points1)}, Route2: {len(points2)}")
         
         # Interpolate points in parallel
-        print(f"Interpolating with {interpolation_distance}m spacing...")
+        print(f"[Step 2/5] Interpolating with {interpolation_distance}m spacing...")
         interpolated_results = process_interpolation_parallel([points1, points2], interpolation_distance)
         interpolated_points1, interpolated_points2 = interpolated_results
         
-        print(f"Interpolated points - Route1: {len(interpolated_points1)}, Route2: {len(interpolated_points2)}")
+        print(f"[Step 2/5] Interpolated points - Route1: {len(interpolated_points1)}, Route2: {len(interpolated_points2)}")
         
         # Calculate differences using parallel processing
-        print(f"Calculating differences with {difference_threshold}m threshold...")
+        print(f"[Step 3/5] Calculating differences with {difference_threshold}m threshold...")
+        print(f"[Step 3/5] Using adaptive accuracy-optimized algorithm...")
         differences = calculate_route_differences_parallel(interpolated_points1, interpolated_points2, difference_threshold)
         
         # Count significant differences
         significant_differences = [d for d in differences if d['exceeds_threshold']]
-        print(f"Found {len(significant_differences)} significant differences out of {len(differences)} total comparisons")
+        print(f"[Step 3/5] Found {len(significant_differences)} significant differences out of {len(differences)} total comparisons")
         
         # Create route segments based on differences
-        print("Creating route segments based on differences...")
+        print("[Step 4/5] Creating route segments based on differences...")
         route1_segments = create_route_segments_by_difference(interpolated_points1, differences, difference_threshold, route_num=1)
         route2_segments = create_route_segments_by_difference(interpolated_points2, differences, difference_threshold, route_num=2)
-        print(f"Route 1 segments: {len(route1_segments)}, Route 2 segments: {len(route2_segments)}")
+        print(f"[Step 4/5] Route 1 segments: {len(route1_segments)}, Route 2 segments: {len(route2_segments)}")
+        
+        # Debug segment statistics
+        route1_diff_segments = [s for s in route1_segments if s['is_different']]
+        route2_diff_segments = [s for s in route2_segments if s['is_different']]
+        print(f"[Step 4/5] Difference segments - Route1: {len(route1_diff_segments)}, Route2: {len(route2_diff_segments)}")
+        
+        if route1_diff_segments:
+            total_diff_points = sum(len(s['points']) for s in route1_diff_segments)
+            print(f"[Step 4/5] Total difference points in Route1: {total_diff_points}")
+        if route2_diff_segments:
+            total_diff_points = sum(len(s['points']) for s in route2_diff_segments)
+            print(f"[Step 4/5] Total difference points in Route2: {total_diff_points}")
         
         # Extract route data using interpolated points
+        print("[Step 5/5] Generating route visualization data...")
         route1 = {
             'name': os.path.splitext(os.path.basename(file1_path))[0],
             'points': interpolated_points1,
@@ -492,21 +764,52 @@ def process_gpx_data(points1, points2, file1_path, file2_path, interpolation_dis
     # Use the calculated differences instead of simple overlaps
     overlaps = significant_differences
     
-    return {
-        'route1': route1,
-        'route2': route2,
-        'bounds': bounds,
-        'overlaps': overlaps,
-        'differences': differences,
-        'significant_differences': significant_differences,
-        'interpolation_distance': interpolation_distance,
-        'difference_threshold': difference_threshold,
+    # Ensure all values are JSON serializable
+    def make_serializable(obj):
+        """Convert numpy types and other non-serializable objects to Python native types."""
+        if hasattr(obj, 'dtype'):  # numpy arrays and scalars
+            if obj.dtype.kind in ('i', 'u'):  # integer types
+                return int(obj) if obj.ndim == 0 else obj.tolist()
+            elif obj.dtype.kind == 'f':  # floating point types
+                return float(obj) if obj.ndim == 0 else obj.tolist()
+            elif obj.dtype.kind == 'b':  # boolean types
+                return bool(obj) if obj.ndim == 0 else obj.tolist()
+            else:
+                return obj.tolist() if obj.ndim > 0 else str(obj)
+        elif isinstance(obj, dict):
+            return {k: make_serializable(v) for k, v in obj.items()}
+        elif isinstance(obj, (list, tuple)):
+            return [make_serializable(item) for item in obj]
+        elif isinstance(obj, (np.integer, int)):
+            return int(obj)
+        elif isinstance(obj, (np.floating, float)):
+            return float(obj)
+        elif isinstance(obj, np.bool_):
+            return bool(obj)
+        else:
+            return obj
+    
+    result = {
+        'route1': make_serializable(route1),
+        'route2': make_serializable(route2),
+        'bounds': make_serializable(bounds),
+        'overlaps': make_serializable(overlaps),
+        'differences': make_serializable(differences),
+        'significant_differences': make_serializable(significant_differences),
+        'interpolation_distance': float(interpolation_distance),
+        'difference_threshold': float(difference_threshold),
         'statistics': {
             'total_comparisons': len(differences),
             'significant_differences_count': len(significant_differences),
             'similarity_percentage': round((1 - len(significant_differences) / len(differences)) * 100, 2) if differences else 0
         }
     }
+    
+    # Save result to cache for future use
+    save_cached_result(cache_key, result)
+    print("[CACHE SAVE] Result saved to cache for faster future processing")
+    
+    return result
 
 def create_comparison_plot(points1, points2, output_path, file1_path, file2_path, map_type='satellite', difference_threshold=30):
     """Create a comparison visualization of two GPX tracks on satellite imagery."""
@@ -548,8 +851,8 @@ def create_comparison_plot(points1, points2, output_path, file1_path, file2_path
     legend_padding_x = width * 0.15
     legend_padding_y = height * 0.10
     
-    # Create the plot with optimized size for web display (fills tool-container width)
-    fig, ax = plt.subplots(figsize=(16, 10))
+    # Create the plot with optimized size for web display (smaller for better performance)
+    fig, ax = plt.subplots(figsize=(12, 8))
 
     # Plot the routes as simple red and blue lines
     file1_basename = os.path.basename(file1_path)
@@ -677,7 +980,7 @@ def create_comparison_plot(points1, points2, output_path, file1_path, file2_path
     )
     
     plt.tight_layout()
-    plt.savefig(output_path, dpi=150, bbox_inches='tight', facecolor='white', format='jpeg', pil_kwargs={'quality': 95})
+    plt.savefig(output_path, dpi=120, bbox_inches='tight', facecolor='white', format='jpeg', pil_kwargs={'quality': 85, 'optimize': True})
     plt.close()
 
 def main():

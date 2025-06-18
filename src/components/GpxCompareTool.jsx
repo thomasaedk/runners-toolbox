@@ -15,7 +15,7 @@ function GpxCompareTool({ onStateChange }) {
     return parseFloat(localStorage.getItem('gpx-interpolation-distance')) || 10
   })
   const [differenceThreshold, setDifferenceThreshold] = useState(() => {
-    return parseFloat(localStorage.getItem('gpx-difference-threshold')) || 30
+    return parseFloat(localStorage.getItem('gpx-difference-threshold')) || 40
   })
   const { t } = useTranslation()
   const resultRef = useRef(null)
@@ -209,6 +209,22 @@ function GpxCompareTool({ onStateChange }) {
     setResultData(null)
   }
 
+  const resetToDefaults = () => {
+    // Reset to default values
+    const defaultInterpolationDistance = 10
+    const defaultDifferenceThreshold = 40
+    const defaultMapType = 'satellite'
+    
+    setInterpolationDistance(defaultInterpolationDistance)
+    setDifferenceThreshold(defaultDifferenceThreshold)
+    setMapType(defaultMapType)
+    
+    // Update localStorage
+    localStorage.setItem('gpx-interpolation-distance', defaultInterpolationDistance.toString())
+    localStorage.setItem('gpx-difference-threshold', defaultDifferenceThreshold.toString())
+    localStorage.setItem('gpx-map-type', defaultMapType)
+  }
+
   return (
     <div className="tool-container">
       <h2>{t('gpxCompare.title')}</h2>
@@ -348,6 +364,7 @@ function GpxCompareTool({ onStateChange }) {
             differenceThreshold={differenceThreshold}
             onInterpolationDistanceChange={handleInterpolationDistanceChange}
             onDifferenceThresholdChange={handleDifferenceThresholdChange}
+            onResetToDefaults={resetToDefaults}
           />
           
         </div>

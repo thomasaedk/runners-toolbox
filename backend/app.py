@@ -5,6 +5,34 @@ import tempfile
 import subprocess
 from werkzeug.utils import secure_filename
 from gpx_processor import parse_gpx_file, process_gpx_data
+import numpy as np
+import json
+
+def convert_numpy_types(obj):
+    """Recursively convert numpy types to Python native types."""
+    if hasattr(obj, 'dtype'):  # numpy arrays and scalars
+        if obj.dtype.kind in ('i', 'u'):  # integer types
+            return int(obj) if obj.ndim == 0 else obj.tolist()
+        elif obj.dtype.kind == 'f':  # floating point types
+            return float(obj) if obj.ndim == 0 else obj.tolist()
+        elif obj.dtype.kind == 'b':  # boolean types
+            return bool(obj) if obj.ndim == 0 else obj.tolist()
+        else:
+            return obj.tolist() if hasattr(obj, 'tolist') else str(obj)
+    elif isinstance(obj, (np.integer, np.int64, np.int32, np.int16, np.int8)):
+        return int(obj)
+    elif isinstance(obj, (np.floating, np.float64, np.float32)):
+        return float(obj)
+    elif isinstance(obj, np.bool_):
+        return bool(obj)
+    elif isinstance(obj, np.ndarray):
+        return obj.tolist()
+    elif isinstance(obj, dict):
+        return {k: convert_numpy_types(v) for k, v in obj.items()}
+    elif isinstance(obj, (list, tuple)):
+        return [convert_numpy_types(item) for item in obj]
+    else:
+        return obj
 
 app = Flask(__name__)
 CORS(app)
@@ -95,7 +123,7 @@ def compare_gpx_data():
         
         # Get configurable parameters from form data
         interpolation_distance = float(request.form.get('interpolationDistance', 10))
-        difference_threshold = float(request.form.get('differenceThreshold', 50))
+        difference_threshold = float(request.form.get('differenceThreshold', 40))
         
         print(f"Processing with interpolation distance: {interpolation_distance}m, difference threshold: {difference_threshold}m")
         
@@ -107,7 +135,9 @@ def compare_gpx_data():
             return jsonify({'error': f'Error processing GPX data: {str(e)}'}), 500
         
         print("GPX data processing completed successfully")
-        return jsonify(result_data)
+        # Convert any numpy types to Python native types before JSON serialization
+        clean_result_data = convert_numpy_types(result_data)
+        return jsonify(clean_result_data)
             
     except Exception as e:
         print(f"EXCEPTION: {str(e)}")
