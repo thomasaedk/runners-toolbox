@@ -68,7 +68,11 @@
     "differenceThreshold": "Difference Threshold",
     "thresholdDescription": "Maximum distance between routes to be considered similar. Points farther apart than this threshold will be marked as significant differences.",
     "commonSegments": "Common Segments",
-    "showCommonSegments": "Show Common Segments"
+    "showCommonSegments": "Show Common Segments",
+    "showStartEndMarkers": "Show Start/End Markers",
+    "showDifferences": "Show Differences",
+    "differenceAreas": "Difference Areas",
+    "clickToToggleDifferences": "Click to toggle difference areas"
   },
   "placeholderTool": {
     "comingSoon": "This tool is coming soon! It will provide additional functionality for runners.",

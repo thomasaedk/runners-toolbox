@@ -68,7 +68,11 @@
     "differenceThreshold": "Forskelstærskel",
     "thresholdDescription": "Maksimal afstand mellem ruter for at blive betragtet som ens. Punkter længere fra hinanden end denne tærskel vil blive markeret som betydelige forskelle.",
     "commonSegments": "Fælles Segmenter",
-    "showCommonSegments": "Vis Fælles Segmenter"
+    "showCommonSegments": "Vis Fælles Segmenter",
+    "showStartEndMarkers": "Vis Start/Slut Markører",
+    "showDifferences": "Vis Forskelle",
+    "differenceAreas": "Forskelsområder",
+    "clickToToggleDifferences": "Klik for at skifte forskelsområder"
   },
   "placeholderTool": {
     "comingSoon": "Dette værktøj kommer snart! Det vil give yderligere funktionalitet til løbere.",

@@ -154,7 +154,7 @@ const DualMapView = ({
                   setShowDifferenceBoxes(e.target.checked)
                 }}
               />
-              Show Differences
+              {t('gpxCompare.showDifferences')}
             </label>
           </div>
           
@@ -182,7 +182,7 @@ const DualMapView = ({
                 checked={showStartEndMarkers}
                 onChange={(e) => setShowStartEndMarkers(e.target.checked)}
               />
-              Show Start/End Markers
+              {t('gpxCompare.showStartEndMarkers')}
             </label>
           </div>
           
@@ -355,7 +355,7 @@ const DualMapView = ({
                       checked={showStartEndMarkers}
                       onChange={(e) => setShowStartEndMarkers(e.target.checked)}
                     />
-                    <span className="checkbox-label">Show Start/End Markers</span>
+                    <span className="checkbox-label">{t('gpxCompare.showStartEndMarkers')}</span>
                   </label>
                 </div>
               </div>
@@ -443,7 +443,7 @@ const DualMapView = ({
             setHighlightDifferences(newValue)
             setShowDifferenceBoxes(newValue)
           }}
-          title="Click to toggle difference areas"
+          title={t('gpxCompare.clickToToggleDifferences')}
         >
           <div 
             className="route-color-indicator" 
@@ -453,7 +453,7 @@ const DualMapView = ({
               opacity: (highlightDifferences && showDifferenceBoxes) ? 1 : 0.3
             }}
           ></div>
-          <span className="route-name">Difference Areas</span>
+          <span className="route-name">{t('gpxCompare.differenceAreas')}</span>
           <span className="visibility-indicator">
             {(highlightDifferences && showDifferenceBoxes) ? '👁️' : '🚫'}
           </span>
