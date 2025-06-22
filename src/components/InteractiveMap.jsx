@@ -1,4 +1,4 @@
-import { useEffect, useRef, useImperativeHandle, forwardRef } from 'react'
+import { useEffect, useRef, useImperativeHandle, forwardRef, useState } from 'react'
 import { MapContainer, TileLayer, Polyline, Marker, Popup, Rectangle, SVGOverlay, useMap, useMapEvents } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
@@ -11,18 +11,32 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 })
 
-// Custom icons for start/end markers
-const createCustomIcon = (color, type) => {
+// Custom icons for start/end markers with zoom-based scaling
+const createCustomIcon = (color, type, zoom = 10) => {
+  // Scale markers: original size at high zoom (16+), smaller when zoomed out
+  const baseSize = 20
+  const baseFontSize = 12
+  const baseBorderWidth = 3
+  const minSize = 1.5
+  // Scale from 0.05 (extremely small) at zoom 3 to 1.0 (original) at zoom 16+
+  const zoomScale = Math.max(0.05, Math.min(1.0, (zoom - 3) / 13))
+  const size = Math.max(minSize, baseSize * zoomScale)
+  const fontSize = Math.max(2, baseFontSize * zoomScale)
+  const borderWidth = Math.max(0.2, baseBorderWidth * zoomScale)
+  
   const iconHtml = type === 'start' 
-    ? `<div style="background-color: ${color}; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 12px;">S</div>`
-    : `<div style="background-color: ${color}; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 12px;">E</div>`
+    ? `<div style="background-color: ${color}; width: ${size}px; height: ${size}px; border-radius: 50%; border: ${borderWidth}px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: ${fontSize}px;">S</div>`
+    : `<div style="background-color: ${color}; width: ${size}px; height: ${size}px; border-radius: 50%; border: ${borderWidth}px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: ${fontSize}px;">E</div>`
+  
+  const iconSize = size + borderWidth * 2
+  const anchor = iconSize / 2
   
   return L.divIcon({
     html: iconHtml,
     className: 'custom-marker',
-    iconSize: [26, 26],
-    iconAnchor: [13, 13],
-    popupAnchor: [0, -13]
+    iconSize: [iconSize, iconSize],
+    iconAnchor: [anchor, anchor],
+    popupAnchor: [0, -anchor]
   })
 }
 
@@ -38,16 +52,30 @@ const createArrowIcon = (bearing, color) => {
   })
 }
 
-// Custom kilometer marker icon
-const createKilometerIcon = (kilometer, color) => {
-  const markerHtml = `<div style="background-color: ${color}; width: 28px; height: 28px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 10px;">${kilometer}</div>`
+// Custom kilometer marker icon with zoom-based scaling
+const createKilometerIcon = (kilometer, color, zoom = 10) => {
+  // Scale markers: original size at high zoom (16+), smaller when zoomed out
+  const baseSize = 28
+  const baseFontSize = 10
+  const baseBorderWidth = 2
+  const minSize = 2
+  // Scale from 0.05 (extremely small) at zoom 3 to 1.0 (original) at zoom 16+
+  const zoomScale = Math.max(0.05, Math.min(1.0, (zoom - 3) / 13))
+  const size = Math.max(minSize, baseSize * zoomScale)
+  const fontSize = Math.max(2, baseFontSize * zoomScale)
+  const borderWidth = Math.max(0.3, baseBorderWidth * zoomScale)
+  
+  const markerHtml = `<div style="background-color: ${color}; width: ${size}px; height: ${size}px; border-radius: 50%; border: ${borderWidth}px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: ${fontSize}px;">${kilometer}</div>`
+  
+  const iconSize = size + borderWidth * 2
+  const anchor = iconSize / 2
   
   return L.divIcon({
     html: markerHtml,
     className: 'kilometer-marker',
-    iconSize: [32, 32],
-    iconAnchor: [16, 16],
-    popupAnchor: [0, -16]
+    iconSize: [iconSize, iconSize],
+    iconAnchor: [anchor, anchor],
+    popupAnchor: [0, -anchor]
   })
 }
 
@@ -95,12 +123,22 @@ const calculateOffsetPoint = (lat, lon, bearing, offsetMeters) => {
   }
 }
 
+// Helper function to validate and filter route points
+const validateRoutePoints = (points) => {
+  if (!points || !Array.isArray(points)) return []
+  return points
+    .filter(p => p && typeof p.lat === 'number' && typeof p.lon === 'number' && 
+                 !isNaN(p.lat) && !isNaN(p.lon) && 
+                 Math.abs(p.lat) <= 90 && Math.abs(p.lon) <= 180)
+    .map(p => [p.lat, p.lon])
+}
+
 // Process routes to create side-by-side rendering for overlapping segments
 const processRoutesForSideBySideRendering = (route1, route2) => {
   if (!route1 || !route2 || !route1.points || !route2.points) {
     return {
-      route1Points: route1?.points?.map(p => [p.lat, p.lon]) || [],
-      route2Points: route2?.points?.map(p => [p.lat, p.lon]) || []
+      route1Points: validateRoutePoints(route1?.points),
+      route2Points: validateRoutePoints(route2?.points)
     }
   }
 
@@ -108,19 +146,24 @@ const processRoutesForSideBySideRendering = (route1, route2) => {
   const OFFSET_DISTANCE = 8 // meters
   
   // Simple, safe approach: only apply small consistent offsets to avoid loops
-  const route1Points = route1.points.map(p => [p.lat, p.lon])
-  const route2Points = route2.points.map(p => [p.lat, p.lon])
+  const route1Points = validateRoutePoints(route1.points)
+  const route2Points = validateRoutePoints(route2.points)
+  
+  // If either route has no valid points, return early
+  if (route1Points.length === 0 || route2Points.length === 0) {
+    return { route1Points, route2Points }
+  }
   
   // Quick overlap check with much larger sampling to avoid performance issues
   let hasSignificantOverlap = false
   const sampleRate = Math.max(20, Math.floor(route1.points.length / 50)) // Sample less frequently
   
-  for (let i = 0; i < route1.points.length && !hasSignificantOverlap; i += sampleRate) {
-    const r1Point = route1.points[i]
+  for (let i = 0; i < route1Points.length && !hasSignificantOverlap; i += sampleRate) {
+    const r1Point = route1Points[i] // [lat, lon] format
     
-    for (let j = 0; j < route2.points.length; j += sampleRate) {
-      const r2Point = route2.points[j]
-      const distance = calculateDistance(r1Point.lat, r1Point.lon, r2Point.lat, r2Point.lon) * 1000
+    for (let j = 0; j < route2Points.length; j += sampleRate) {
+      const r2Point = route2Points[j] // [lat, lon] format
+      const distance = calculateDistance(r1Point[0], r1Point[1], r2Point[0], r2Point[1]) * 1000
       
       if (distance < OVERLAP_THRESHOLD) {
         hasSignificantOverlap = true
@@ -142,20 +185,20 @@ const processRoutesForSideBySideRendering = (route1, route2) => {
     
     // Apply small, consistent offset to all points (simple and smooth)
     return {
-      route1Points: route1.points.map(point => {
-        const offsetPoint = calculateOffsetPoint(point.lat, point.lon, overallBearing1, -OFFSET_DISTANCE * 0.5)
+      route1Points: validateRoutePoints(route1.points).map(point => {
+        const offsetPoint = calculateOffsetPoint(point[0], point[1], overallBearing1, -OFFSET_DISTANCE * 0.5)
         return [offsetPoint.lat, offsetPoint.lon]
       }),
-      route2Points: route2.points.map(point => {
-        const offsetPoint = calculateOffsetPoint(point.lat, point.lon, overallBearing2, OFFSET_DISTANCE * 0.5)
+      route2Points: validateRoutePoints(route2.points).map(point => {
+        const offsetPoint = calculateOffsetPoint(point[0], point[1], overallBearing2, OFFSET_DISTANCE * 0.5)
         return [offsetPoint.lat, offsetPoint.lon]
       })
     }
   }
   
   return {
-    route1Points: route1Points.map(p => [p.lat, p.lon]),
-    route2Points: route2Points.map(p => [p.lat, p.lon])
+    route1Points: route1Points,
+    route2Points: route2Points
   }
 }
 
@@ -163,14 +206,22 @@ const processRoutesForSideBySideRendering = (route1, route2) => {
 const generateKilometerMarkers = (points, color) => {
   if (!points || points.length < 2) return []
   
+  // Validate all points have valid coordinates
+  const validPoints = points.filter(p => 
+    p && typeof p.lat === 'number' && typeof p.lon === 'number' && 
+    !isNaN(p.lat) && !isNaN(p.lon)
+  )
+  
+  if (validPoints.length < 2) return []
+  
   const markers = []
   let totalDistance = 0
   let nextKilometer = 1
   
-  for (let i = 1; i < points.length; i++) {
+  for (let i = 1; i < validPoints.length; i++) {
     const segmentDistance = calculateDistance(
-      points[i-1].lat, points[i-1].lon,
-      points[i].lat, points[i].lon
+      validPoints[i-1].lat, validPoints[i-1].lon,
+      validPoints[i].lat, validPoints[i].lon
     )
     
     const segmentStart = totalDistance
@@ -182,8 +233,8 @@ const generateKilometerMarkers = (points, color) => {
       const ratio = distanceIntoSegment / segmentDistance
       
       // Interpolate position
-      const lat = points[i-1].lat + (points[i].lat - points[i-1].lat) * ratio
-      const lon = points[i-1].lon + (points[i].lon - points[i-1].lon) * ratio
+      const lat = validPoints[i-1].lat + (validPoints[i].lat - validPoints[i-1].lat) * ratio
+      const lon = validPoints[i-1].lon + (validPoints[i].lon - validPoints[i-1].lon) * ratio
       
       markers.push({
         position: [lat, lon],
@@ -201,7 +252,7 @@ const generateKilometerMarkers = (points, color) => {
 }
 
 // Component to handle map events and sync
-const MapEventHandler = ({ onViewChange, syncView }) => {
+const MapEventHandler = ({ onViewChange, syncView, onZoomChange }) => {
   const map = useMap()
   
   const mapEvents = {}
@@ -212,11 +263,23 @@ const MapEventHandler = ({ onViewChange, syncView }) => {
       const center = map.getCenter()
       const zoom = map.getZoom()
       onViewChange({ center, zoom })
+      if (onZoomChange) {
+        onZoomChange(zoom)
+      }
     }
     mapEvents.zoomend = () => {
       const center = map.getCenter()
       const zoom = map.getZoom()
       onViewChange({ center, zoom })
+      if (onZoomChange) {
+        onZoomChange(zoom)
+      }
+    }
+  } else if (onZoomChange) {
+    // Add zoom handler even when onViewChange is not provided
+    mapEvents.zoomend = () => {
+      const zoom = map.getZoom()
+      onZoomChange(zoom)
     }
   }
   
@@ -308,6 +371,9 @@ const InteractiveMap = forwardRef(({
     getMap: () => mapRef.current
   }))
   
+  // Track zoom level for marker scaling
+  const [currentZoom, setCurrentZoom] = useState(13)
+  
   // Handle map resize when container size changes
   useEffect(() => {
     const resizeObserver = new ResizeObserver((entries) => {
@@ -342,6 +408,17 @@ const InteractiveMap = forwardRef(({
   // Process routes for side-by-side rendering when both routes exist
   const { route1Points, route2Points } = processRoutesForSideBySideRendering(route1, route2)
   
+  // Final validation - ensure all coordinate arrays are valid
+  const safeRoute1Points = route1Points.filter(point => 
+    Array.isArray(point) && point.length === 2 && 
+    typeof point[0] === 'number' && typeof point[1] === 'number' &&
+    !isNaN(point[0]) && !isNaN(point[1])
+  )
+  const safeRoute2Points = route2Points.filter(point => 
+    Array.isArray(point) && point.length === 2 && 
+    typeof point[0] === 'number' && typeof point[1] === 'number' &&
+    !isNaN(point[0]) && !isNaN(point[1])
+  )
   
   // Calculate center point
   const center = bounds ? [
@@ -374,9 +451,9 @@ const InteractiveMap = forwardRef(({
         />
         
         {/* Route outlines - render first */}
-        {route1 && route1Points && route1Points.length > 0 && (
+        {route1 && safeRoute1Points && safeRoute1Points.length > 0 && (
           <Polyline
-            positions={route1Points}
+            positions={safeRoute1Points}
             color="white"
             weight={6}
             opacity={0.7}
@@ -384,9 +461,9 @@ const InteractiveMap = forwardRef(({
           />
         )}
         
-        {route2 && route2Points && route2Points.length > 0 && (
+        {route2 && safeRoute2Points && safeRoute2Points.length > 0 && (
           <Polyline
-            positions={route2Points}
+            positions={safeRoute2Points}
             color="white"
             weight={6}
             opacity={0.7}
@@ -395,9 +472,9 @@ const InteractiveMap = forwardRef(({
         )}
         
         {/* Route 1 - Red line (always renders first to be underneath) */}
-        {route1 && route1Points && route1Points.length > 0 && (
+        {route1 && safeRoute1Points && safeRoute1Points.length > 0 && (
           <Polyline
-            positions={route1Points}
+            positions={safeRoute1Points}
             color="red"
             weight={4}
             opacity={0.8}
@@ -406,9 +483,9 @@ const InteractiveMap = forwardRef(({
         )}
         
         {/* Route 2 - Blue line with transparency so red shows through */}
-        {route2 && route2Points && route2Points.length > 0 && (
+        {route2 && safeRoute2Points && safeRoute2Points.length > 0 && (
           <Polyline
-            positions={route2Points}
+            positions={safeRoute2Points}
             color="blue"
             weight={4}
             opacity={0.7}
@@ -679,11 +756,13 @@ const InteractiveMap = forwardRef(({
         })()}
         
         {/* Start/End Markers for Route 1 */}
-        {showStartEndMarkers && route1 && (
+        {showStartEndMarkers && route1 && route1.start && route1.end && 
+         typeof route1.start.lat === 'number' && typeof route1.start.lon === 'number' &&
+         typeof route1.end.lat === 'number' && typeof route1.end.lon === 'number' && (
           <>
             <Marker
               position={[route1.start.lat, route1.start.lon]}
-              icon={createCustomIcon('red', 'start')}
+              icon={createCustomIcon('red', 'start', currentZoom)}
             >
               <Popup>
                 <strong>{route1.name}</strong><br />
@@ -693,7 +772,7 @@ const InteractiveMap = forwardRef(({
             
             <Marker
               position={[route1.end.lat, route1.end.lon]}
-              icon={createCustomIcon('red', 'end')}
+              icon={createCustomIcon('red', 'end', currentZoom)}
             >
               <Popup>
                 <strong>{route1.name}</strong><br />
@@ -704,11 +783,13 @@ const InteractiveMap = forwardRef(({
         )}
         
         {/* Start/End Markers for Route 2 */}
-        {showStartEndMarkers && route2 && (
+        {showStartEndMarkers && route2 && route2.start && route2.end && 
+         typeof route2.start.lat === 'number' && typeof route2.start.lon === 'number' &&
+         typeof route2.end.lat === 'number' && typeof route2.end.lon === 'number' && (
           <>
             <Marker
               position={[route2.start.lat, route2.start.lon]}
-              icon={createCustomIcon('blue', 'start')}
+              icon={createCustomIcon('blue', 'start', currentZoom)}
             >
               <Popup>
                 <strong>{route2.name}</strong><br />
@@ -718,7 +799,7 @@ const InteractiveMap = forwardRef(({
             
             <Marker
               position={[route2.end.lat, route2.end.lon]}
-              icon={createCustomIcon('blue', 'end')}
+              icon={createCustomIcon('blue', 'end', currentZoom)}
             >
               <Popup>
                 <strong>{route2.name}</strong><br />
@@ -752,7 +833,7 @@ const InteractiveMap = forwardRef(({
             <Marker
               key={`route1-km-${marker.kilometer}`}
               position={marker.position}
-              icon={createKilometerIcon(marker.kilometer, marker.color)}
+              icon={createKilometerIcon(marker.kilometer, marker.color, currentZoom)}
             >
               <Popup>
                 <strong>{route1.name}</strong><br />
@@ -768,7 +849,7 @@ const InteractiveMap = forwardRef(({
             <Marker
               key={`route2-km-${marker.kilometer}`}
               position={marker.position}
-              icon={createKilometerIcon(marker.kilometer, marker.color)}
+              icon={createKilometerIcon(marker.kilometer, marker.color, currentZoom)}
             >
               <Popup>
                 <strong>{route2.name}</strong><br />
@@ -779,7 +860,7 @@ const InteractiveMap = forwardRef(({
         }
         
         {/* Map event handlers */}
-        <MapEventHandler onViewChange={onViewChange} syncView={syncView} />
+        <MapEventHandler onViewChange={onViewChange} syncView={syncView} onZoomChange={setCurrentZoom} />
         <BoundsHandler bounds={bounds} />
       </MapContainer>
     </div>

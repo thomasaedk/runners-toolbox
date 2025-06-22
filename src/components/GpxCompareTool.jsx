@@ -34,11 +34,13 @@ function GpxCompareTool({ onStateChange }) {
   useEffect(() => {
     if (resultData && resultRef.current) {
       setTimeout(() => {
-        resultRef.current.scrollIntoView({ 
-          behavior: 'smooth', 
-          block: 'start',
-          inline: 'nearest'
-        })
+        if (resultRef.current) {
+          resultRef.current.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'start',
+            inline: 'nearest'
+          })
+        }
       }, 100) // Small delay to ensure component is rendered
     }
   }, [resultData])
