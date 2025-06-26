@@ -15,6 +15,13 @@ A high-performance web application providing essential tools for runners, featur
 - **Kilometer markers and direction arrows** for enhanced route understanding
 - **Route visibility toggles** for focused analysis
 
+### 🗺️ Route Planning & Elevation
+- **Interactive route planning** with click-to-add waypoints
+- **Real-time elevation profiles** using OpenElevation API
+- **Drag-and-drop waypoint editing** with smart insertion
+- **GPX export and import** for route sharing
+- **Total ascent and descent calculations** with distance tracking
+
 ### ⚙️ Configurable Processing Parameters
 - **Interpolation distance control** (1-100m) for route resolution
 - **Difference threshold adjustment** (0-1000m) for sensitivity tuning
@@ -78,14 +85,19 @@ A high-performance web application providing essential tools for runners, featur
 ```bash
 # Build and run the container
 docker build -t runners-toolbox .
-docker run -p 5173:5173 -p 5000:5000 runners-toolbox
+docker run -p 5000:5000 runners-toolbox
 ```
 
 **When the container is ready:**
-- You'll see log messages indicating both services have started
-- The container will be healthy when both services are responding (may take 30-60 seconds)
+- The Flask server will serve both frontend and backend
+- Container will be healthy when service is responding (may take 30-60 seconds)
 
-**Access the application at http://localhost:5173**
+**Access the application at http://localhost:5000**
+
+**Elevation Data:**
+- ✅ **Real elevation data** is used by default via OpenElevation API
+- ✅ **High-resolution elevation profiles** with automatic ascent/descent calculation  
+- ✅ **Automatic fallback** to mock data if API is unavailable
 
 #### Option 2: Docker Development (Recommended for Development)
 
@@ -103,6 +115,11 @@ docker-compose -f docker-compose.dev.yml up -d
 - ✅ Frontend and backend hot reload
 - ✅ Edit code and see changes instantly
 - ✅ Volume mounts for live code editing
+
+**Elevation Data:**
+- ✅ **Real elevation data** is used by default in development mode
+- ✅ **OpenElevation API** provides accurate elevation profiles
+- ✅ **Environment variable control**: Set `VITE_USE_MOCK_ELEVATION=true` to force mock data for testing
 
 #### Option 3: Manual Development Setup
 
@@ -132,16 +149,34 @@ npm run dev
 ```
 The React app will start on http://localhost:5173
 
+**Elevation Data:**
+- ✅ **Real elevation data** is used by default via OpenElevation API
+- ✅ **High-resolution elevation profiles** in the Route Planner tool
+- ✅ **Environment variables** for testing:
+  - `VITE_USE_MOCK_ELEVATION=true` - Force mock elevation data
+  - `VITE_USE_REAL_ELEVATION=false` - Disable real elevation API
+
 ### Usage
 
-**Once the application is running (Docker or manual setup):**
+**Once the application is running:**
 
-1. **Open your web browser** and navigate to **http://localhost:5173**
-2. You should see the Runner's Toolbox homepage with language selection
-3. Click on the "GPX Compare" tab to use the main tool
-4. Upload two .gpx files using the file upload areas
-5. Click "Compare Routes" to generate a visualization
-6. View the comparison image showing both routes overlaid
+#### GPX Route Comparison
+1. **Open your web browser** and navigate to the application:
+   - **Docker**: http://localhost:5000
+   - **Development**: http://localhost:5173
+2. Click on the **"GPX Compare"** tab
+3. Upload two .gpx files using the file upload areas
+4. Adjust comparison settings (interpolation distance, difference threshold)
+5. Click **"Compare Routes"** to generate an interactive visualization
+6. View the comparison with both routes overlaid and difference areas highlighted
+
+#### Route Planning & Elevation
+1. Click on the **"Route Planner"** tab
+2. Click **"Start Planning"** to begin creating a route
+3. Click on the map to add waypoints
+4. **Real elevation data** will be automatically fetched and displayed as you add points
+5. View the **elevation profile** with total ascent/descent calculations
+6. Export your planned route as a GPX file
 
 **Note**: The application supports both English and Danish languages, automatically detecting your browser's language preference.
 
@@ -151,6 +186,34 @@ The React app will start on http://localhost:5173
 - Backend files are in `backend/`
 - The frontend automatically proxies API requests to the backend
 - Hot reload is enabled for both frontend and backend development
+
+### Elevation Data Configuration
+
+The Route Planner uses real elevation data from the OpenElevation API by default. You can control this behavior:
+
+#### Environment Variables
+- `VITE_USE_REAL_ELEVATION=true` (default) - Use OpenElevation API
+- `VITE_USE_REAL_ELEVATION=false` - Disable real elevation, use mock data
+- `VITE_USE_MOCK_ELEVATION=true` - Force mock data in development mode
+
+#### For Docker Development
+Add environment variables to your `docker-compose.dev.yml`:
+```yaml
+services:
+  frontend:
+    environment:
+      - VITE_USE_MOCK_ELEVATION=true  # Force mock data for testing
+```
+
+#### For Manual Development  
+Set environment variables before starting:
+```bash
+# Force mock elevation data
+VITE_USE_MOCK_ELEVATION=true npm run dev
+
+# Disable real elevation entirely
+VITE_USE_REAL_ELEVATION=false npm run dev
+```
 
 ### Docker Development Commands
 

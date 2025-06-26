@@ -10,6 +10,10 @@ COPY package*.json ./
 # Install frontend dependencies (including dev dependencies for build)
 RUN npm ci
 
+# Accept build argument for elevation API
+ARG VITE_USE_REAL_ELEVATION=true
+ENV VITE_USE_REAL_ELEVATION=${VITE_USE_REAL_ELEVATION}
+
 # Copy frontend source code
 COPY src/ ./src/
 COPY public/ ./public/

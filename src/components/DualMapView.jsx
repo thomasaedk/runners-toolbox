@@ -253,20 +253,6 @@ const DualMapView = ({
       {/* Map Background Controls - Keep at top */}
       <div className="map-background-controls">
         <h3>{t('gpxCompare.mapBackground')}</h3>
-        <div className="map-type-toggle">
-          <button 
-            className={`map-type-button ${mapType === 'satellite' ? 'active' : ''}`}
-            onClick={() => onMapTypeChange && onMapTypeChange('satellite')}
-          >
-            🛰️ {t('gpxCompare.satellite')}
-          </button>
-          <button 
-            className={`map-type-button ${mapType === 'street' ? 'active' : ''}`}
-            onClick={() => onMapTypeChange && onMapTypeChange('street')}
-          >
-            🗺️ {t('gpxCompare.streetMap')}
-          </button>
-        </div>
       </div>
       
       {/* Advanced Settings - Expandable Section */}
@@ -476,7 +462,24 @@ const DualMapView = ({
               </button>
             )}
           </div>
-          <InteractiveMap
+          <div className="map-container-with-controls">
+            <div className="map-type-toggle-inline">
+              <button 
+                className={`map-type-button-inline ${mapType === 'satellite' ? 'active' : ''}`}
+                onClick={() => onMapTypeChange && onMapTypeChange('satellite')}
+                title={t('gpxCompare.satellite')}
+              >
+                🛰️
+              </button>
+              <button 
+                className={`map-type-button-inline ${mapType === 'street' ? 'active' : ''}`}
+                onClick={() => onMapTypeChange && onMapTypeChange('street')}
+                title={t('gpxCompare.streetMap')}
+              >
+                🗺️
+              </button>
+            </div>
+            <InteractiveMap
             key={`combined-map-${combinedKey}`}
             ref={map1Ref}
             routeData={{
@@ -497,6 +500,7 @@ const DualMapView = ({
             showDifferenceBoxes={showDifferenceBoxes}
             differenceThreshold={differenceThreshold}
           />
+          </div>
         </div>
       </div>
       

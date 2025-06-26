@@ -3,11 +3,13 @@ import { useTranslation } from 'react-i18next'
 import './App.css'
 import GpxCompareTool from './components/GpxCompareTool'
 import PlaceholderTool from './components/PlaceholderTool'
+import RoutePlanner from './components/RoutePlanner'
 import LanguageSwitcher from './components/LanguageSwitcher'
 
 function App() {
-  const [activeTab, setActiveTab] = useState('gpx-compare')
+  const [activeTab, setActiveTab] = useState('tool2')
   const [gpxToolState, setGpxToolState] = useState({ hasUnsavedWork: false, loading: false })
+  const [routePlannerState, setRoutePlannerState] = useState({ hasRoute: false, isPlanning: false })
   const { t } = useTranslation()
 
   // Update document title when language changes
@@ -23,6 +25,15 @@ function App() {
         return
       }
     }
+    
+    // If switching away from Route Planner and there's a route, show warning
+    if (activeTab === 'tool2' && newTab !== 'tool2' && routePlannerState.hasRoute) {
+      const confirmed = window.confirm('You have a route in progress. Switching tabs will lose your route. Continue?')
+      if (!confirmed) {
+        return
+      }
+    }
+    
     setActiveTab(newTab)
   }
 
@@ -36,16 +47,16 @@ function App() {
 
       <nav className="tabs">
         <button
-          className={activeTab === 'gpx-compare' ? 'tab active' : 'tab'}
-          onClick={() => handleTabChange('gpx-compare')}
-        >
-          {t('tabs.gpxCompare')}
-        </button>
-        <button
           className={activeTab === 'tool2' ? 'tab active' : 'tab'}
           onClick={() => handleTabChange('tool2')}
         >
           {t('tabs.tool2')}
+        </button>
+        <button
+          className={activeTab === 'gpx-compare' ? 'tab active' : 'tab'}
+          onClick={() => handleTabChange('gpx-compare')}
+        >
+          {t('tabs.gpxCompare')}
         </button>
         <button
           className={activeTab === 'tool3' ? 'tab active' : 'tab'}
@@ -57,7 +68,7 @@ function App() {
 
       <main className="main-content">
         {activeTab === 'gpx-compare' && <GpxCompareTool onStateChange={setGpxToolState} />}
-        {activeTab === 'tool2' && <PlaceholderTool name={t('tabs.tool2')} />}
+        {activeTab === 'tool2' && <RoutePlanner onStateChange={setRoutePlannerState} />}
         {activeTab === 'tool3' && <PlaceholderTool name={t('tabs.tool3')} />}
       </main>
     </div>
