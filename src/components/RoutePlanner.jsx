@@ -684,10 +684,10 @@ ${routePoints.map(point => `      <trkpt lat="${point.lat}" lon="${point.lng}"><
                 <span className="elevation-stat">↘ {elevationData.totalDescent.toFixed(0)} m</span>
               </>
             )}
+            {routePoints.length > 0 && (
+              <span className="point-count">({routePoints.length} points)</span>
+            )}
           </div>
-          {routePoints.length > 0 && (
-            <span className="point-count">({routePoints.length} points)</span>
-          )}
         </div>
         {isPlanning && (
           <div className="planning-info">
