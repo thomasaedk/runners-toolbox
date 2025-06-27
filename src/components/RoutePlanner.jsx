@@ -37,28 +37,23 @@ const calculateTotalDistance = (points) => {
   return total
 }
 
-// Find the best insertion point for a new point on the route
+// Find the best insertion point for a new point on the route (only between existing points)
 const findBestInsertionIndex = (newPoint, routePoints) => {
-  if (routePoints.length < 2) return routePoints.length
+  if (routePoints.length < 2) return 1
   
   let bestIndex = 1
   let minDistanceIncrease = Infinity
   
-  for (let i = 1; i <= routePoints.length; i++) {
+  // Only consider insertions between existing points (not at the end)
+  for (let i = 1; i < routePoints.length; i++) {
     const prevPoint = routePoints[i - 1]
-    const nextPoint = i < routePoints.length ? routePoints[i] : null
+    const nextPoint = routePoints[i]
     
-    let distanceIncrease
-    if (nextPoint) {
-      // Calculate distance increase by inserting the point between prevPoint and nextPoint
-      const originalDistance = calculateDistance(prevPoint.lat, prevPoint.lng, nextPoint.lat, nextPoint.lng)
-      const newDistance1 = calculateDistance(prevPoint.lat, prevPoint.lng, newPoint.lat, newPoint.lng)
-      const newDistance2 = calculateDistance(newPoint.lat, newPoint.lng, nextPoint.lat, nextPoint.lng)
-      distanceIncrease = newDistance1 + newDistance2 - originalDistance
-    } else {
-      // Inserting at the end
-      distanceIncrease = calculateDistance(prevPoint.lat, prevPoint.lng, newPoint.lat, newPoint.lng)
-    }
+    // Calculate distance increase by inserting the point between prevPoint and nextPoint
+    const originalDistance = calculateDistance(prevPoint.lat, prevPoint.lng, nextPoint.lat, nextPoint.lng)
+    const newDistance1 = calculateDistance(prevPoint.lat, prevPoint.lng, newPoint.lat, newPoint.lng)
+    const newDistance2 = calculateDistance(newPoint.lat, newPoint.lng, nextPoint.lat, nextPoint.lng)
+    const distanceIncrease = newDistance1 + newDistance2 - originalDistance
     
     if (distanceIncrease < minDistanceIncrease) {
       minDistanceIncrease = distanceIncrease
@@ -68,6 +63,7 @@ const findBestInsertionIndex = (newPoint, routePoints) => {
   
   return bestIndex
 }
+
 
 // Custom draggable marker icon - small points
 const createDraggableIcon = (index) => {
@@ -82,12 +78,19 @@ const createDraggableIcon = (index) => {
 }
 
 // Component to handle map clicks
-const MapClickHandler = ({ onMapClick, onRouteDoubleClick, routePoints, isPlanning }) => {
+const MapClickHandler = ({ onMapClick, onRouteDoubleClick, onRouteClick, routePoints, isPlanning }) => {
   useMapEvents({
     click(e) {
-      if (isPlanning) {
+      const ctrlOrCmdPressed = e.originalEvent.ctrlKey || e.originalEvent.metaKey
+      
+      if (ctrlOrCmdPressed && routePoints.length > 1 && onRouteClick) {
+        // Ctrl/Cmd + Click: Insert point between adjacent points
+        onRouteClick(e.latlng)
+      } else if (isPlanning) {
+        // Regular click in planning mode: Add new waypoint at end
         onMapClick(e.latlng)
       }
+      // Note: Regular clicks when not planning are ignored (no action)
     }
   })
   
@@ -292,18 +295,28 @@ const RoutePlanner = ({ onStateChange }) => {
     }
   }, [routePoints.length, saveToHistory])
   
+  // Handle left-click on route to insert new point
+  const handleRouteClick = useCallback((latlng) => {
+    saveToHistory()
+    const newPoint = { lat: latlng.lat, lng: latlng.lng, id: Date.now() }
+    
+    // Find the best insertion index between existing points
+    const insertIndex = findBestInsertionIndex(newPoint, routePoints)
+    
+    setRoutePoints(prev => {
+      const newPoints = [...prev]
+      newPoints.splice(insertIndex, 0, newPoint)
+      return newPoints
+    })
+  }, [routePoints, saveToHistory])
+
   // Handle double-click on route to insert new point
   const handleRouteDoubleClick = useCallback((latlng) => {
     saveToHistory()
     const newPoint = { lat: latlng.lat, lng: latlng.lng, id: Date.now() }
     
-    // Find the best insertion index, but never insert at the very end (preserve end point)
-    let insertIndex = findBestInsertionIndex(newPoint, routePoints)
-    
-    // If the insertion would be at the end, insert before the last point instead
-    if (insertIndex >= routePoints.length) {
-      insertIndex = routePoints.length - 1
-    }
+    // Find the best insertion index between existing points
+    const insertIndex = findBestInsertionIndex(newPoint, routePoints)
     
     setRoutePoints(prev => {
       const newPoints = [...prev]
@@ -575,6 +588,7 @@ ${routePoints.map(point => `      <trkpt lat="${point.lat}" lon="${point.lng}"><
             
             <MapClickHandler 
               onMapClick={handleMapClick}
+              onRouteClick={handleRouteClick}
               routePoints={routePoints}
               isPlanning={isPlanning}
             />
@@ -626,10 +640,10 @@ ${routePoints.map(point => `      <trkpt lat="${point.lat}" lon="${point.lng}"><
         {showInstructions && (
           <ol>
             <li>Click <strong>"Start Planning"</strong> to begin creating your route</li>
-            <li>Click anywhere on the map to add waypoints</li>
+            <li><strong>Click</strong> anywhere to add new waypoints at the end</li>
+            <li><strong>Ctrl/Cmd + Click</strong> anywhere to insert new points between adjacent points</li>
             <li>Drag markers to reposition them</li>
             <li>Right-click markers to delete them</li>
-            <li>Double-click the route line to insert new points</li>
             <li>Export your route as a GPX file when finished</li>
           </ol>
         )}
@@ -691,12 +705,12 @@ ${routePoints.map(point => `      <trkpt lat="${point.lat}" lon="${point.lng}"><
         </div>
         {isPlanning && (
           <div className="planning-info">
-            Click on the map to add points. Right-click markers to delete them. Double-click the route line to insert new points.
+            Click to add waypoints. Ctrl/Cmd + Click to insert points between adjacent points. Right-click markers to delete them.
           </div>
         )}
         {!isPlanning && routePoints.length > 1 && (
           <div className="planning-info">
-            Double-click the route line to insert new points. Drag markers to reposition them.
+            Ctrl/Cmd + Click to insert new points between adjacent points. Drag markers to reposition them.
           </div>
         )}
       </div>
@@ -761,6 +775,7 @@ ${routePoints.map(point => `      <trkpt lat="${point.lat}" lon="${point.lng}"><
           
           <MapClickHandler 
             onMapClick={handleMapClick}
+            onRouteClick={handleRouteClick}
             routePoints={routePoints}
             isPlanning={isPlanning}
           />
