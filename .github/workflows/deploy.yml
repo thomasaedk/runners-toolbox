@@ -1,5 +1,5 @@
 # This workflow deploys the webapp to Railway on pushes to main.
-# Markdown file changes alone don't trigger a deployment.
+# Markdown file and gitignore changes alone don't trigger a deployment.
 
 name: Deploy to Railway
 
@@ -11,7 +11,7 @@ jobs:
   check-changes:
     runs-on: ubuntu-latest
     outputs:
-      non_md_changed: ${{ steps.cf.outputs.other_changed_files }}
+      deployment_files_changed: ${{ steps.cf.outputs.other_changed_files }}
     steps:
       - uses: actions/checkout@v3
         with:
@@ -21,11 +21,13 @@ jobs:
       - id: cf
         uses: tj-actions/changed-files@v46.0.5
         with:
-          files: '**/*.md'
+          files: |
+            **/*.md
+            .gitignore
 
   deploy:
     needs: check-changes
-    if: needs.check-changes.outputs.non_md_changed != ''
+    if: needs.check-changes.outputs.deployment_files_changed != ''
     runs-on: ubuntu-latest
     container: ghcr.io/railwayapp/cli:latest
     env:
@@ -37,15 +39,15 @@ jobs:
       - name: Add to summary
         run: |
           {
-            echo "🚀 Deployment ran because non-Markdown files were changed."
+            echo "🚀 Deployment ran because files other than Markdown or gitignore were changed."
             echo "🌐 The application is available at: [https://runners-toolbox.up.railway.app/](https://runners-toolbox.up.railway.app/)"
           } >> $GITHUB_STEP_SUMMARY
 
   skip-deploy:
     needs: check-changes
-    if: needs.check-changes.outputs.non_md_changed == ''
+    if: needs.check-changes.outputs.deployment_files_changed == ''
     runs-on: ubuntu-latest
     steps:
-      - run: echo "Only Markdown files were changed. Skipping deployment."
+      - run: echo "Only Markdown files or gitignore were changed. Skipping deployment."
       - name: Add to summary
-        run: echo "✅ Deployment was skipped because only Markdown files were changed." >> $GITHUB_STEP_SUMMARY
+        run: echo "✅ Deployment was skipped because only Markdown files or gitignore were changed." >> $GITHUB_STEP_SUMMARY
