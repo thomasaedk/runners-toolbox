@@ -261,14 +261,14 @@ const DualMapView = ({
           className="advanced-settings-toggle"
           onClick={() => setShowAdvancedSettings(!showAdvancedSettings)}
         >
-          ⚙️ Advanced Settings {showAdvancedSettings ? '▼' : '▶'}
+          {t('common.advancedSettings')} {showAdvancedSettings ? '▼' : '▶'}
         </button>
         
         {showAdvancedSettings && (
           <div className="advanced-settings-content">
             {/* Processing Parameters */}
             <div className="advanced-section">
-              <h4 className="advanced-section-title">Processing Parameters</h4>
+              <h4 className="advanced-section-title">{t('common.processingParameters')}</h4>
               
               <div className="advanced-setting-item">
                 <div className="setting-header">
@@ -283,7 +283,7 @@ const DualMapView = ({
                       step="1"
                       className="setting-number-input"
                     />
-                    <span className="setting-unit">meters</span>
+                    <span className="setting-unit">{t('common.meters')}</span>
                   </div>
                 </div>
                 <p className="setting-description">
@@ -304,7 +304,7 @@ const DualMapView = ({
                       step="5"
                       className="setting-number-input"
                     />
-                    <span className="setting-unit">meters</span>
+                    <span className="setting-unit">{t('common.meters')}</span>
                   </div>
                 </div>
                 <p className="setting-description">
@@ -315,7 +315,7 @@ const DualMapView = ({
             
             {/* Display Options */}
             <div className="advanced-section">
-              <h4 className="advanced-section-title">Display Options</h4>
+              <h4 className="advanced-section-title">{t('common.displayOptions')}</h4>
               
               <div className="advanced-setting-item">
                 <div className="setting-checkboxes">
@@ -373,7 +373,7 @@ const DualMapView = ({
                   onClick={onResetToDefaults}
                   disabled={!onResetToDefaults}
                 >
-                  🔄 {t('gpxCompare.resetToDefaults', 'Reset to Defaults')}
+                  {t('common.resetToDefaults')}
                 </button>
                 <p className="setting-description">
                   {t('gpxCompare.resetDescription', 'Reset all settings to their default values')}

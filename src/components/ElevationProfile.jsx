@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 // Simple elevation profile component
 // In a real implementation, this would fetch elevation data from an API like Open Elevation
 const ElevationProfile = ({ routePoints, onElevationData, hidden = false, calculationOnly = false }) => {
+  const { t } = useTranslation()
   // Use real elevation data by default in production, mock in development
   const USE_REAL_ELEVATION = import.meta.env.VITE_USE_REAL_ELEVATION !== 'false'
   const canvasRef = useRef(null)
@@ -369,10 +371,10 @@ const ElevationProfile = ({ routePoints, onElevationData, hidden = false, calcul
   if (routePoints.length < 2) {
     return (
       <div className="elevation-placeholder">
-        <p><strong>Elevation Profile</strong></p>
-        <p>Add at least 2 points to your route to see the elevation profile</p>
+        <p><strong>{t('routePlanner.stats.elevationProfile')}</strong></p>
+        <p>{t('routePlanner.messages.addPointsForElevation')}</p>
         <p className="elevation-note">
-          Elevation data is fetched from the Open Elevation API.
+          {t('routePlanner.messages.elevationDataSource')}
         </p>
       </div>
     )
@@ -389,8 +391,7 @@ const ElevationProfile = ({ routePoints, onElevationData, hidden = false, calcul
       {!USE_REAL_ELEVATION && (
         <div className="elevation-info">
           <p className="elevation-note">
-            <strong>Note:</strong> This elevation profile uses mock data for demonstration purposes.
-            In production, real elevation data will be fetched from Open Elevation API.
+            {t('routePlanner.messages.mockDataNote')}
           </p>
         </div>
       )}

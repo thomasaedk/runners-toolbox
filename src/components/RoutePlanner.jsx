@@ -2,6 +2,7 @@ import { useState, useRef, useCallback, useEffect } from 'react'
 import { MapContainer, TileLayer, Marker, Polyline, useMapEvents } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
+import { useTranslation } from 'react-i18next'
 import ElevationProfile from './ElevationProfile'
 
 // Fix for default markers in React Leaflet
@@ -317,6 +318,7 @@ const InteractivePolyline = ({ positions, onDoubleClick }) => {
 
 // Custom marker component with drag and delete functionality
 const DraggableMarker = ({ position, index, onDrag, onDelete, isLastPoint, isSelected, onSelect }) => {
+  const { t } = useTranslation()
   const markerRef = useRef(null)
   
   const eventHandlers = {
@@ -370,12 +372,13 @@ const DraggableMarker = ({ position, index, onDrag, onDelete, isLastPoint, isSel
       eventHandlers={{...eventHandlers, contextmenu: handleRightClick, keydown: handleKeyDown}}
       icon={createSelectableIcon()}
       ref={markerRef}
-      title={`Waypoint ${index + 1} - Right-click to delete, drag to move`}
+      title={t('routePlanner.accessibility.waypointTooltip', { index: index + 1 })}
     />
   )
 }
 
 const RoutePlanner = ({ onStateChange }) => {
+  const { t } = useTranslation()
   const [routePoints, setRoutePoints] = useState([])
   const [mapType, setMapType] = useState('satellite')
   const [isPlanning, setIsPlanning] = useState(false)
@@ -747,7 +750,7 @@ ${routePoints.map(point => `      <trkpt lat="${point.lat}" lon="${point.lng}"><
           }
         }
       } catch (error) {
-        alert('Error parsing GPX file. Please ensure it\'s a valid GPX file.')
+        alert(t('routePlanner.errors.gpxParseError'))
       }
     }
     reader.readAsText(file)
@@ -925,7 +928,7 @@ ${routePoints.map(point => `      <trkpt lat="${point.lat}" lon="${point.lng}"><
           if (event.ctrlKey || event.metaKey) {
             // Ctrl+C: Clear route with confirmation
             if (routePoints.length > 0) {
-              if (window.confirm('Are you sure you want to clear the entire route? This action cannot be undone.')) {
+              if (window.confirm(t('routePlanner.confirmations.clearRouteConfirm'))) {
                 clearRoute()
               }
             }
@@ -974,7 +977,7 @@ ${routePoints.map(point => `      <trkpt lat="${point.lat}" lon="${point.lng}"><
           <button 
             onClick={toggleFullscreen}
             className="fullscreen-exit-button"
-            title="Exit fullscreen"
+            title={t('routePlanner.accessibility.exitFullscreen')}
           >
             ✕
           </button>
@@ -986,7 +989,7 @@ ${routePoints.map(point => `      <trkpt lat="${point.lat}" lon="${point.lng}"><
               onClick={isPlanning ? pausePlanning : (isPaused ? resumePlanning : startPlanning)}
               className={`btn ${isPlanning ? 'btn-secondary' : 'btn-primary'}`}
             >
-              {isPlanning ? 'Pause Planning' : (isPaused ? 'Resume Planning' : 'Start Planning')}
+              {isPlanning ? t('routePlanner.buttons.pausePlanning') : (isPaused ? t('routePlanner.buttons.resumePlanning') : t('routePlanner.buttons.startPlanning'))}
             </button>
             {isPaused && routePoints.length > 0 && (
               <button 
@@ -994,17 +997,17 @@ ${routePoints.map(point => `      <trkpt lat="${point.lat}" lon="${point.lng}"><
                 className="btn btn-secondary"
                 title="Switch to planning from the other end of the route"
               >
-                ↔️ Flip
+                {t('routePlanner.buttons.flip')}
               </button>
             )}
             <button onClick={undoLastAction} className="btn btn-secondary" disabled={routeHistory.length === 0}>
-              ↶ Undo
+              {t('routePlanner.buttons.undo')}
             </button>
             <button onClick={removeLastPoint} className="btn btn-secondary" disabled={routePoints.length === 0}>
-              Remove Last Point
+              {t('routePlanner.buttons.removeLastPoint')}
             </button>
             <button onClick={clearRoute} className="btn btn-danger" disabled={routePoints.length === 0}>
-              Clear Route
+              {t('routePlanner.buttons.clearRoute')}
             </button>
           </div>
           
@@ -1015,20 +1018,20 @@ ${routePoints.map(point => `      <trkpt lat="${point.lat}" lon="${point.lng}"><
                 className={`map-type-button ${mapType === 'satellite' ? 'active' : ''}`}
                 onClick={() => setMapType('satellite')}
               >
-                🛰️ Satellite
+                {t('routePlanner.buttons.satellite')}
               </button>
               <button 
                 className={`map-type-button ${mapType === 'street' ? 'active' : ''}`}
                 onClick={() => setMapType('street')}
               >
-                🗺️ Street Map
+                {t('routePlanner.buttons.streetMap')}
               </button>
             </div>
           </div>
           
           <div className="fullscreen-controls-group">
             <div className="route-stats">
-              <strong>Distance: {totalDistance.toFixed(2)} km</strong>
+              <strong>{t('routePlanner.stats.distance')}: {totalDistance.toFixed(2)} km</strong>
               {routePoints.length > 1 && (
                 <>
                   <span className="elevation-stat">↗ {elevationData.totalAscent.toFixed(0)} m</span>
@@ -1044,7 +1047,7 @@ ${routePoints.map(point => `      <trkpt lat="${point.lat}" lon="${point.lng}"><
               className="btn btn-secondary"
               title="Save current map center as default location"
             >
-              📍 Set Default
+              {t('routePlanner.buttons.setDefault')}
             </button>
           </div>
         </div>
@@ -1135,50 +1138,50 @@ ${routePoints.map(point => `      <trkpt lat="${point.lat}" lon="${point.lng}"><
       
       <div className="usage-instructions">
         <div className="instructions-header" onClick={toggleInstructions}>
-          <p><strong>How to use:</strong></p>
+          <p><strong>{t('routePlanner.instructions.howToUse')}</strong></p>
           <button className="instructions-toggle">
             {showInstructions ? '▼' : '▶'}
           </button>
         </div>
         {showInstructions && (
           <div>
-            <h4>Basic Usage:</h4>
+            <h4>{t('routePlanner.instructions.basicUsage')}</h4>
             <ol>
-              <li>Click <strong>"Start Planning"</strong> to begin creating your route</li>
-              <li><strong>{isMobile ? 'Tap' : 'Click'}</strong> anywhere to add new waypoints at the end</li>
-              <li><strong>{isMobile ? 'Long-press' : 'Ctrl/Cmd + Click'}</strong> anywhere to insert new points between adjacent points</li>
-              <li>Drag markers to reposition them</li>
-              <li>{isMobile ? 'Long-press markers to delete them' : 'Right-click markers to delete them'}</li>
-              <li>Export your route as a GPX file when finished</li>
+              <li>{t('routePlanner.instructions.step1')}</li>
+              <li>{t('routePlanner.instructions.step2', { action: isMobile ? t('common.actions.tap') : t('common.actions.click') })}</li>
+              <li>{t('routePlanner.instructions.step3', { action: isMobile ? t('common.actions.longPress') : t('common.actions.ctrlClick') })}</li>
+              <li>{t('routePlanner.instructions.step4')}</li>
+              <li>{t('routePlanner.instructions.step5', { action: isMobile ? t('common.actions.longPress') : t('common.actions.rightClick') })}</li>
+              <li>{t('routePlanner.instructions.step6')}</li>
             </ol>
             
             {!isMobile && (
               <>
-                <h4>Keyboard Shortcuts:</h4>
+                <h4>{t('routePlanner.instructions.keyboardShortcuts')}</h4>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', fontSize: '0.9rem', marginTop: '1rem' }}>
-                  <div><strong>Space:</strong> Toggle planning</div>
-                  <div><strong>Ctrl+Z:</strong> Undo</div>
-                  <div><strong>Delete/Backspace:</strong> Remove last point</div>
-                  <div><strong>F:</strong> Toggle fullscreen</div>
-                  <div><strong>Tab:</strong> Select next marker</div>
-                  <div><strong>Arrows:</strong> Move selected marker</div>
-                  <div><strong>Ctrl+S:</strong> Export GPX</div>
-                  <div><strong>Ctrl+O:</strong> Import GPX</div>
-                  <div><strong>Ctrl+C:</strong> Clear route (with confirmation)</div>
-                  <div><strong>Escape:</strong> Exit fullscreen/pause</div>
+                  <div>{t('routePlanner.instructions.shortcutSpace')}</div>
+                  <div>{t('routePlanner.instructions.shortcutUndo')}</div>
+                  <div>{t('routePlanner.instructions.shortcutRemovePoint')}</div>
+                  <div>{t('routePlanner.instructions.shortcutFullscreen')}</div>
+                  <div>{t('routePlanner.instructions.shortcutSelectMarker')}</div>
+                  <div>{t('routePlanner.instructions.shortcutMoveMarker')}</div>
+                  <div>{t('routePlanner.instructions.shortcutExport')}</div>
+                  <div>{t('routePlanner.instructions.shortcutImport')}</div>
+                  <div>{t('routePlanner.instructions.shortcutClear')}</div>
+                  <div>{t('routePlanner.instructions.shortcutEscape')}</div>
                 </div>
               </>
             )}
             
             {isMobile && (
               <>
-                <h4>Touch Gestures:</h4>
+                <h4>{t('routePlanner.instructions.touchGestures')}</h4>
                 <div style={{ fontSize: '0.9rem', marginTop: '1rem' }}>
-                  <div style={{ marginBottom: '0.5rem' }}><strong>Tap:</strong> Add waypoint or select marker</div>
-                  <div style={{ marginBottom: '0.5rem' }}><strong>Long-press map:</strong> Insert point between adjacent points</div>
-                  <div style={{ marginBottom: '0.5rem' }}><strong>Long-press marker:</strong> Delete marker</div>
-                  <div style={{ marginBottom: '0.5rem' }}><strong>Drag:</strong> Move marker position</div>
-                  <div style={{ marginBottom: '0.5rem' }}><strong>Pinch:</strong> Zoom in/out</div>
+                  <div style={{ marginBottom: '0.5rem' }}>{t('routePlanner.instructions.touchTap')}</div>
+                  <div style={{ marginBottom: '0.5rem' }}>{t('routePlanner.instructions.touchLongPressMap')}</div>
+                  <div style={{ marginBottom: '0.5rem' }}>{t('routePlanner.instructions.touchLongPressMarker')}</div>
+                  <div style={{ marginBottom: '0.5rem' }}>{t('routePlanner.instructions.touchDrag')}</div>
+                  <div style={{ marginBottom: '0.5rem' }}>{t('routePlanner.instructions.touchPinch')}</div>
                 </div>
               </>
             )}
@@ -1192,7 +1195,7 @@ ${routePoints.map(point => `      <trkpt lat="${point.lat}" lon="${point.lng}"><
               onClick={isPlanning ? pausePlanning : (isPaused ? resumePlanning : startPlanning)}
               className={`btn ${isPlanning ? 'btn-secondary' : 'btn-primary'}`}
             >
-              {isPlanning ? 'Pause Planning' : (isPaused ? 'Resume Planning' : 'Start Planning')}
+              {isPlanning ? t('routePlanner.buttons.pausePlanning') : (isPaused ? t('routePlanner.buttons.resumePlanning') : t('routePlanner.buttons.startPlanning'))}
             </button>
             {isPaused && routePoints.length > 0 && (
               <button 
@@ -1204,13 +1207,13 @@ ${routePoints.map(point => `      <trkpt lat="${point.lat}" lon="${point.lng}"><
               </button>
             )}
             <button onClick={undoLastAction} className="btn btn-secondary" disabled={routeHistory.length === 0}>
-              ↶ Undo
+              {t('routePlanner.buttons.undo')}
             </button>
             <button onClick={removeLastPoint} className="btn btn-secondary" disabled={routePoints.length === 0}>
-              Remove Last Point
+              {t('routePlanner.buttons.removeLastPoint')}
             </button>
             <button onClick={clearRoute} className="btn btn-danger" disabled={routePoints.length === 0}>
-              Clear Route
+              {t('routePlanner.buttons.clearRoute')}
             </button>
           </div>
           
@@ -1223,10 +1226,10 @@ ${routePoints.map(point => `      <trkpt lat="${point.lat}" lon="${point.lng}"><
               style={{ display: 'none' }}
             />
             <button onClick={() => fileInputRef.current?.click()} className="btn btn-secondary">
-              Import GPX
+              {t('routePlanner.buttons.importGpx')}
             </button>
             <button onClick={exportGPX} className="btn btn-secondary" disabled={routePoints.length === 0}>
-              Export GPX
+              {t('routePlanner.buttons.exportGpx')}
             </button>
           </div>
           
@@ -1253,14 +1256,14 @@ ${routePoints.map(point => `      <trkpt lat="${point.lat}" lon="${point.lng}"><
           {isPlanning ? (
             isMobile 
               ? 'Tap to add waypoints. Long-press to insert points between adjacent points.' 
-              : 'Click to add waypoints. Ctrl/Cmd + Click to insert points between adjacent points. Right-click markers to delete them.'
+              : t('routePlanner.messages.clickToAddWaypoints')
           ) : routePoints.length > 1 ? (
             isMobile 
               ? 'Long-press to insert new points between adjacent points. Drag markers to reposition them.' 
               : 'Ctrl/Cmd + Click to insert new points between adjacent points. Drag markers to reposition them.'
           ) : (
             <span style={{ color: '#9ca3af', fontStyle: 'italic' }}>
-              {isMobile ? 'Start planning to begin adding waypoints to your route' : 'Start planning to begin adding waypoints to your route'}
+              {t('routePlanner.messages.startPlanningToBegin')}
             </span>
           )}
         </div>
@@ -1283,7 +1286,7 @@ ${routePoints.map(point => `      <trkpt lat="${point.lat}" lon="${point.lng}"><
         <div className="route-estimates" style={{ minHeight: totalDistance > 0 ? 'auto' : '4rem' }}>
           {totalDistance > 0 ? (
             <>
-              <h4>🏃‍♂️ Estimated Running Times:</h4>
+              <h4>{t('routePlanner.stats.estimatedRunningTimes')}</h4>
               <div className="estimate-grid">
                 {(() => {
                   const estimates = calculateEstimates(totalDistance, elevationData.totalAscent)
@@ -1291,19 +1294,19 @@ ${routePoints.map(point => `      <trkpt lat="${point.lat}" lon="${point.lng}"><
                     <>
                       <div className="estimate-item">
                         <div className="estimate-value">{estimates.easy}</div>
-                        <div className="estimate-label">Easy Pace</div>
+                        <div className="estimate-label">{t('routePlanner.stats.easyPace')}</div>
                       </div>
                       <div className="estimate-item">
                         <div className="estimate-value">{estimates.moderate}</div>
-                        <div className="estimate-label">Moderate Pace</div>
+                        <div className="estimate-label">{t('routePlanner.stats.moderatePace')}</div>
                       </div>
                       <div className="estimate-item">
                         <div className="estimate-value">{estimates.fast}</div>
-                        <div className="estimate-label">Fast Pace</div>
+                        <div className="estimate-label">{t('routePlanner.stats.fastPace')}</div>
                       </div>
                       <div className="estimate-item">
                         <div className="estimate-value">{estimates.calories}</div>
-                        <div className="estimate-label">Calories</div>
+                        <div className="estimate-label">{t('routePlanner.stats.calories')}</div>
                       </div>
                     </>
                   )
@@ -1312,7 +1315,7 @@ ${routePoints.map(point => `      <trkpt lat="${point.lat}" lon="${point.lng}"><
             </>
           ) : (
             <div style={{ color: '#9ca3af', fontStyle: 'italic', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '4rem' }}>
-              Add waypoints to your route to see estimated running times and calorie burn
+              {t('routePlanner.messages.addWaypointsForEstimates')}
             </div>
           )}
         </div>
@@ -1425,7 +1428,7 @@ ${routePoints.map(point => `      <trkpt lat="${point.lat}" lon="${point.lng}"><
       
       {/* Elevation Profile - only show in regular mode */}
       <div className="elevation-profile">
-        <h3>Elevation Profile</h3>
+        <h3>{t('routePlanner.stats.elevationProfile')}</h3>
         <ElevationProfile 
           routePoints={routePoints} 
           onElevationData={handleElevationData}

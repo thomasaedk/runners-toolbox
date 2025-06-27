@@ -2,6 +2,7 @@ import { useEffect, useRef, useImperativeHandle, forwardRef, useState } from 're
 import { MapContainer, TileLayer, Polyline, Marker, Popup, Rectangle, SVGOverlay, useMap, useMapEvents } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
+import { useTranslation } from 'react-i18next'
 
 // Fix for default markers in React Leaflet
 delete L.Icon.Default.prototype._getIconUrl
@@ -364,6 +365,7 @@ const InteractiveMap = forwardRef(({
   showDifferenceBoxes = true,
   differenceThreshold = 30
 }, ref) => {
+  const { t } = useTranslation()
   const mapRef = useRef()
   const containerRef = useRef()
   
@@ -396,7 +398,7 @@ const InteractiveMap = forwardRef(({
   if (!routeData) {
     return (
       <div className="map-placeholder">
-        <p>No route data available</p>
+        <p>{t('common.noData')}</p>
       </div>
     )
   }
@@ -766,7 +768,7 @@ const InteractiveMap = forwardRef(({
             >
               <Popup>
                 <strong>{route1.name}</strong><br />
-                Start Point
+                {t('routePlanner.mapMarkers.startPoint')}
               </Popup>
             </Marker>
             
@@ -776,7 +778,7 @@ const InteractiveMap = forwardRef(({
             >
               <Popup>
                 <strong>{route1.name}</strong><br />
-                End Point
+                {t('routePlanner.mapMarkers.endPoint')}
               </Popup>
             </Marker>
           </>
@@ -793,7 +795,7 @@ const InteractiveMap = forwardRef(({
             >
               <Popup>
                 <strong>{route2.name}</strong><br />
-                Start Point
+                {t('routePlanner.mapMarkers.startPoint')}
               </Popup>
             </Marker>
             
@@ -803,7 +805,7 @@ const InteractiveMap = forwardRef(({
             >
               <Popup>
                 <strong>{route2.name}</strong><br />
-                End Point
+                {t('routePlanner.mapMarkers.endPoint')}
               </Popup>
             </Marker>
           </>
@@ -837,7 +839,7 @@ const InteractiveMap = forwardRef(({
             >
               <Popup>
                 <strong>{route1.name}</strong><br />
-                Kilometer {marker.kilometer}
+                {t('routePlanner.mapMarkers.kilometerMarker', { number: marker.kilometer })}
               </Popup>
             </Marker>
           ))
@@ -853,7 +855,7 @@ const InteractiveMap = forwardRef(({
             >
               <Popup>
                 <strong>{route2.name}</strong><br />
-                Kilometer {marker.kilometer}
+                {t('routePlanner.mapMarkers.kilometerMarker', { number: marker.kilometer })}
               </Popup>
             </Marker>
           ))

@@ -84,5 +84,104 @@
     "switch": "Sprog",
     "english": "Engelsk",
     "danish": "Dansk"
+  },
+  "routePlanner": {
+    "title": "Ruteplanlægger",
+    "buttons": {
+      "pausePlanning": "Pause Planlægning",
+      "resumePlanning": "Genoptag Planlægning",
+      "startPlanning": "Start Planlægning",
+      "flip": "↔️ Vend",
+      "undo": "↶ Fortryd",
+      "removeLastPoint": "Fjern Sidste Punkt",
+      "clearRoute": "Ryd Rute",
+      "satellite": "🛰️ Satellit",
+      "streetMap": "🗺️ Vejkort",
+      "setDefault": "📍 Sæt Standard",
+      "importGpx": "Importer GPX",
+      "exportGpx": "Eksporter GPX"
+    },
+    "stats": {
+      "distance": "Afstand",
+      "easyPace": "Let Tempo",
+      "moderatePace": "Moderat Tempo",
+      "fastPace": "Hurtig Tempo",
+      "calories": "Kalorier",
+      "estimatedRunningTimes": "🏃‍♂️ Estimerede Løbetider:",
+      "elevationProfile": "Højdeprofil"
+    },
+    "instructions": {
+      "howToUse": "Sådan bruges det:",
+      "basicUsage": "Grundlæggende Brug:",
+      "keyboardShortcuts": "Tastaturgenveje:",
+      "touchGestures": "Berøringsbevægelser:",
+      "step1": "Klik \"Start Planlægning\" for at begynde at oprette din rute",
+      "step2": "{{action}} hvor som helst for at tilføje nye rutepunkter i slutningen",
+      "step3": "{{action}} hvor som helst for at indsætte nye punkter mellem tilstødende punkter",
+      "step4": "Træk markører for at flytte dem",
+      "step5": "{{action}} markører for at slette dem",
+      "step6": "Eksporter din rute som en GPX-fil når du er færdig",
+      "shortcutSpace": "Mellemrum: Skift planlægning",
+      "shortcutUndo": "Ctrl+Z: Fortryd",
+      "shortcutRemovePoint": "Delete/Backspace: Fjern sidste punkt",
+      "shortcutFullscreen": "F: Skift fuldskærm",
+      "shortcutSelectMarker": "Tab: Vælg næste markør",
+      "shortcutMoveMarker": "Piletaster: Flyt valgte markør",
+      "shortcutExport": "Ctrl+S: Eksporter GPX",
+      "shortcutImport": "Ctrl+O: Importer GPX",
+      "shortcutClear": "Ctrl+C: Ryd rute (med bekræftelse)",
+      "shortcutEscape": "Escape: Forlad fuldskærm/pause",
+      "touchTap": "Tryk: Tilføj rutepunkt eller vælg markør",
+      "touchLongPressMap": "Langt tryk på kort: Indsæt punkt mellem tilstødende punkter",
+      "touchLongPressMarker": "Langt tryk på markør: Slet markør",
+      "touchDrag": "Træk: Flyt markørposition",
+      "touchPinch": "Knib: Zoom ind/ud"
+    },
+    "messages": {
+      "clickToAddWaypoints": "Klik for at tilføje rutepunkter. Ctrl/Cmd + Klik for at indsætte punkter mellem tilstødende punkter. Højreklik på markører for at slette dem.",
+      "startPlanningToBegin": "Start planlægning for at begynde at tilføje rutepunkter til din rute",
+      "addPointsForElevation": "Tilføj mindst 2 punkter til din rute for at se højdeprofilen",
+      "addWaypointsForEstimates": "Tilføj rutepunkter til din rute for at se estimerede løbetider og kalorieforbrænding",
+      "elevationDataSource": "Højdedata hentes fra Open Elevation API.",
+      "mockDataNote": "Bemærk: Denne højdeprofil bruger mock-data til demonstrationsformål. I en rigtig applikation ville du hente faktiske højdedata fra en tjeneste som Open Elevation API eller Google Elevation API."
+    },
+    "confirmations": {
+      "clearRouteConfirm": "Er du sikker på, at du vil rydde hele ruten? Denne handling kan ikke fortrydes.",
+      "tabSwitchWarning": "Du har en rute i gang. At skifte faner vil miste din rute. Fortsæt?"
+    },
+    "errors": {
+      "gpxParseError": "Fejl ved parsing af GPX-fil. Sørg for, at det er en gyldig GPX-fil.",
+      "fileTooLarge": "Filen er for stor. Maksimal filstørrelse er 3MB."
+    },
+    "accessibility": {
+      "exitFullscreen": "Forlad fuldskærm",
+      "waypointTooltip": "Rutepunkt {{index}} - Højreklik for at slette, træk for at flytte"
+    },
+    "geolocation": {
+      "locating": "Lokaliserer...",
+      "locationFound": "Position fundet",
+      "locationError": "Position utilgængelig",
+      "permissionDenied": "Placeringstilladelse nægtet"
+    },
+    "mapMarkers": {
+      "startPoint": "Startpunkt",
+      "endPoint": "Slutpunkt",
+      "kilometerMarker": "Kilometer {{number}}"
+    }
+  },
+  "common": {
+    "noData": "Ingen rutedata tilgængelig",
+    "advancedSettings": "⚙️ Avancerede Indstillinger",
+    "processingParameters": "Behandlingsparametre",
+    "displayOptions": "Visningsindstillinger",
+    "meters": "meter",
+    "resetToDefaults": "🔄 Nulstil til Standard",
+    "actions": {
+      "click": "Klik",
+      "tap": "Tryk",
+      "longPress": "Langt tryk",
+      "ctrlClick": "Ctrl/Cmd + Klik",
+      "rightClick": "Højreklik"
+    }
   }
 }

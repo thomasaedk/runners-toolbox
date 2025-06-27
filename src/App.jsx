@@ -28,7 +28,7 @@ function App() {
     
     // If switching away from Route Planner and there's a route, show warning
     if (activeTab === 'tool2' && newTab !== 'tool2' && routePlannerState.hasRoute) {
-      const confirmed = window.confirm('You have a route in progress. Switching tabs will lose your route. Continue?')
+      const confirmed = window.confirm(t('routePlanner.confirmations.tabSwitchWarning'))
       if (!confirmed) {
         return
       }

@@ -84,5 +84,104 @@
     "switch": "Language",
     "english": "English",
     "danish": "Danish"
+  },
+  "routePlanner": {
+    "title": "Route Planner",
+    "buttons": {
+      "pausePlanning": "Pause Planning",
+      "resumePlanning": "Resume Planning",
+      "startPlanning": "Start Planning",
+      "flip": "↔️ Flip",
+      "undo": "↶ Undo",
+      "removeLastPoint": "Remove Last Point",
+      "clearRoute": "Clear Route",
+      "satellite": "🛰️ Satellite",
+      "streetMap": "🗺️ Street Map",
+      "setDefault": "📍 Set Default",
+      "importGpx": "Import GPX",
+      "exportGpx": "Export GPX"
+    },
+    "stats": {
+      "distance": "Distance",
+      "easyPace": "Easy Pace",
+      "moderatePace": "Moderate Pace",
+      "fastPace": "Fast Pace",
+      "calories": "Calories",
+      "estimatedRunningTimes": "🏃‍♂️ Estimated Running Times:",
+      "elevationProfile": "Elevation Profile"
+    },
+    "instructions": {
+      "howToUse": "How to use:",
+      "basicUsage": "Basic Usage:",
+      "keyboardShortcuts": "Keyboard Shortcuts:",
+      "touchGestures": "Touch Gestures:",
+      "step1": "Click \"Start Planning\" to begin creating your route",
+      "step2": "{{action}} anywhere to add new waypoints at the end",
+      "step3": "{{action}} anywhere to insert new points between adjacent points",
+      "step4": "Drag markers to reposition them",
+      "step5": "{{action}} markers to delete them",
+      "step6": "Export your route as a GPX file when finished",
+      "shortcutSpace": "Space: Toggle planning",
+      "shortcutUndo": "Ctrl+Z: Undo",
+      "shortcutRemovePoint": "Delete/Backspace: Remove last point",
+      "shortcutFullscreen": "F: Toggle fullscreen",
+      "shortcutSelectMarker": "Tab: Select next marker",
+      "shortcutMoveMarker": "Arrows: Move selected marker",
+      "shortcutExport": "Ctrl+S: Export GPX",
+      "shortcutImport": "Ctrl+O: Import GPX",
+      "shortcutClear": "Ctrl+C: Clear route (with confirmation)",
+      "shortcutEscape": "Escape: Exit fullscreen/pause",
+      "touchTap": "Tap: Add waypoint or select marker",
+      "touchLongPressMap": "Long-press map: Insert point between adjacent points",
+      "touchLongPressMarker": "Long-press marker: Delete marker",
+      "touchDrag": "Drag: Move marker position",
+      "touchPinch": "Pinch: Zoom in/out"
+    },
+    "messages": {
+      "clickToAddWaypoints": "Click to add waypoints. Ctrl/Cmd + Click to insert points between adjacent points. Right-click markers to delete them.",
+      "startPlanningToBegin": "Start planning to begin adding waypoints to your route",
+      "addPointsForElevation": "Add at least 2 points to your route to see the elevation profile",
+      "addWaypointsForEstimates": "Add waypoints to your route to see estimated running times and calorie burn",
+      "elevationDataSource": "Elevation data is fetched from the Open Elevation API.",
+      "mockDataNote": "Note: This elevation profile uses mock data for demonstration purposes. In a real application, you would fetch actual elevation data from a service like Open Elevation API or Google Elevation API."
+    },
+    "confirmations": {
+      "clearRouteConfirm": "Are you sure you want to clear the entire route? This action cannot be undone.",
+      "tabSwitchWarning": "You have a route in progress. Switching tabs will lose your route. Continue?"
+    },
+    "errors": {
+      "gpxParseError": "Error parsing GPX file. Please ensure it's a valid GPX file.",
+      "fileTooLarge": "File is too large. Maximum file size is 3MB."
+    },
+    "accessibility": {
+      "exitFullscreen": "Exit fullscreen",
+      "waypointTooltip": "Waypoint {{index}} - Right-click to delete, drag to move"
+    },
+    "geolocation": {
+      "locating": "Locating...",
+      "locationFound": "Location found",
+      "locationError": "Location unavailable",
+      "permissionDenied": "Location permission denied"
+    },
+    "mapMarkers": {
+      "startPoint": "Start Point",
+      "endPoint": "End Point",
+      "kilometerMarker": "Kilometer {{number}}"
+    }
+  },
+  "common": {
+    "noData": "No route data available",
+    "advancedSettings": "⚙️ Advanced Settings",
+    "processingParameters": "Processing Parameters",
+    "displayOptions": "Display Options",
+    "meters": "meters",
+    "resetToDefaults": "🔄 Reset to Defaults",
+    "actions": {
+      "click": "Click",
+      "tap": "Tap",
+      "longPress": "Long-press",
+      "ctrlClick": "Ctrl/Cmd + Click",
+      "rightClick": "Right-click"
+    }
   }
 }
