@@ -1,23 +1,27 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 // Simple elevation profile component
 // In a real implementation, this would fetch elevation data from an API like Open Elevation
-const ElevationProfile = ({ routePoints, onElevationData }) => {
+const ElevationProfile = ({ routePoints, onElevationData, hidden = false, calculationOnly = false }) => {
   // Use real elevation data by default in production, mock in development
   const USE_REAL_ELEVATION = import.meta.env.VITE_USE_REAL_ELEVATION !== 'false'
   const canvasRef = useRef(null)
+  const [isCalculating, setIsCalculating] = useState(false)
+  
   
   // Fetch real elevation data from Open Elevation API
-  const fetchRealElevation = async (points) => {
+  const fetchRealElevation = async (points, signal) => {
     if (points.length < 2) return { elevationData: [], totalAscent: 0, totalDescent: 0 }
     
     try {
+      // Try Open Elevation API first
       const response = await fetch('https://api.open-elevation.com/api/v1/lookup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           locations: points.map(p => ({ latitude: p.lat, longitude: p.lng }))
-        })
+        }),
+        signal: signal
       })
       
       if (!response.ok) {
@@ -26,6 +30,7 @@ const ElevationProfile = ({ routePoints, onElevationData }) => {
       
       const data = await response.json()
       const elevations = data.results.map(r => r.elevation)
+      
       
       // Calculate distance between points using Haversine formula
       const calculateDistance = (lat1, lon1, lat2, lon2) => {
@@ -50,6 +55,7 @@ const ElevationProfile = ({ routePoints, onElevationData }) => {
           cumulativeDistance += segmentDistance
           
           const elevationChange = elevation - elevations[i-1]
+          
           if (elevationChange > 0) {
             totalAscent += elevationChange
           } else {
@@ -92,10 +98,17 @@ const ElevationProfile = ({ routePoints, onElevationData }) => {
       return R * c
     }
     
-    // Add first point with more reasonable starting elevation
+    // Create deterministic "random" function based on coordinates to ensure consistent results
+    const seededRandom = (lat, lng, index) => {
+      const seed = Math.abs(Math.sin(lat * lng * (index + 1)) * 10000)
+      return seed - Math.floor(seed)
+    }
+    
+    // Add first point with more reasonable starting elevation (deterministic)
+    const firstElevation = 20 + seededRandom(points[0].lat, points[0].lng, 0) * 40
     elevationData.push({
       distance: 0,
-      elevation: 20 + Math.random() * 40 // Mock elevation between 20-60m
+      elevation: firstElevation
     })
     
     // Add subsequent points
@@ -110,7 +123,8 @@ const ElevationProfile = ({ routePoints, onElevationData }) => {
       const prevElevation = elevationData[i-1].elevation
       // Scale elevation change based on distance - smaller changes for shorter segments
       const maxChangePerKm = 5 // Maximum 5m change per kilometer (reduced from 8m)
-      const rawElevationChange = (Math.random() - 0.5) * maxChangePerKm * segmentDistance
+      const randomValue = seededRandom(points[i].lat, points[i].lng, i)
+      const rawElevationChange = (randomValue - 0.5) * maxChangePerKm * segmentDistance
       // Apply smoothing to prevent wild swings
       const smoothingFactor = 0.7
       const elevationChange = rawElevationChange * smoothingFactor
@@ -257,23 +271,69 @@ const ElevationProfile = ({ routePoints, onElevationData }) => {
   }
   
   useEffect(() => {
+    const abortController = new AbortController()
+    
     const updateElevationData = async () => {
       if (routePoints.length >= 2) {
-        const { totalAscent, totalDescent } = USE_REAL_ELEVATION 
-          ? await fetchRealElevation(routePoints)
-          : generateMockElevation(routePoints)
-        
-        if (onElevationData) {
-          onElevationData({ totalAscent, totalDescent })
+        try {
+          // Set loading state for real elevation API calls
+          if (USE_REAL_ELEVATION) {
+            setIsCalculating(true)
+          }
+          
+          const { totalAscent, totalDescent } = USE_REAL_ELEVATION 
+            ? await fetchRealElevation(routePoints, abortController.signal)
+            : generateMockElevation(routePoints)
+          
+          // Only update if this effect hasn't been cancelled (i.e., route points haven't changed again)
+          if (!abortController.signal.aborted && onElevationData) {
+            onElevationData({ totalAscent, totalDescent })
+          }
+        } catch (error) {
+          // Don't show errors for aborted requests
+          if (error.name !== 'AbortError') {
+            console.error('Error calculating elevation data:', error)
+            // Fallback to mock data if real elevation fails
+            if (!abortController.signal.aborted) {
+              const { totalAscent, totalDescent } = generateMockElevation(routePoints)
+              if (onElevationData) {
+                onElevationData({ totalAscent, totalDescent })
+              }
+            }
+          }
+        } finally {
+          // Clear loading state
+          if (!abortController.signal.aborted) {
+            setIsCalculating(false)
+          }
         }
+      } else if (!abortController.signal.aborted && onElevationData) {
+        onElevationData({ totalAscent: 0, totalDescent: 0 })
       }
-      drawProfile()
+      
+      if (!abortController.signal.aborted && !hidden && !calculationOnly) {
+        drawProfile()
+      }
     }
     
     updateElevationData()
-  }, [routePoints, onElevationData, USE_REAL_ELEVATION])
+    
+    // Cleanup function to cancel the effect if component unmounts or routePoints change
+    return () => {
+      abortController.abort()
+    }
+  }, [routePoints, USE_REAL_ELEVATION, hidden, calculationOnly])
+  
+  // Separate effect to ensure elevation data is reset when points are cleared
+  useEffect(() => {
+    if (routePoints.length < 2 && onElevationData) {
+      onElevationData({ totalAscent: 0, totalDescent: 0 })
+    }
+  }, [routePoints.length, onElevationData])
   
   useEffect(() => {
+    if (hidden || calculationOnly) return
+    
     const handleResize = () => {
       const canvas = canvasRef.current
       if (canvas) {
@@ -299,7 +359,12 @@ const ElevationProfile = ({ routePoints, onElevationData }) => {
     handleResize()
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
-  }, [])
+  }, [hidden, calculationOnly])
+  
+  // If this is calculation-only mode, don't render anything visual
+  if (calculationOnly) {
+    return <div style={{ display: 'none' }}></div>
+  }
   
   if (routePoints.length < 2) {
     return (

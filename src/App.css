@@ -1755,6 +1755,38 @@ body:has(.dual-map-container.fullscreen) .app {
   margin-bottom: 1.5rem;
 }
 
+/* Layout improvements for controls */
+.tool-container .controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+}
+
+.control-group.primary-controls {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.control-group.file-controls {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+/* Compact button for the flip functionality */
+.btn-compact {
+  padding: 0.75rem 1rem !important;
+  min-width: 3rem;
+}
+
 .usage-instructions p {
   margin: 0 0 0.5rem 0;
   color: #374151;
@@ -2169,6 +2201,14 @@ body:has(.dual-map-container.fullscreen) .app {
   font-weight: 600;
 }
 
+.elevation-profile.hidden-in-fullscreen {
+  position: absolute;
+  left: -9999px;
+  top: -9999px;
+  visibility: hidden;
+  pointer-events: none;
+}
+
 .elevation-placeholder {
   padding: 2rem;
   text-align: center;
@@ -2232,14 +2272,18 @@ body:has(.dual-map-container.fullscreen) .app {
     font-size: 1.5rem;
   }
   
-  .controls {
+  .tool-container .controls {
     flex-direction: column;
     align-items: stretch;
+    gap: 0.75rem;
   }
   
-  .control-group {
+  .control-group.primary-controls,
+  .control-group.file-controls {
+    flex: none;
     justify-content: center;
     flex-wrap: wrap;
+    width: 100%;
   }
   
   .btn {
@@ -2458,4 +2502,382 @@ body:has(.route-planner-fullscreen) .app {
 .route-planner-fullscreen .fullscreen-exit-button:hover {
   background: rgba(220, 38, 38, 0.8);
   transform: scale(1.1);
+}
+
+/* ========== VISUAL FEEDBACK & CURSOR IMPROVEMENTS ========== */
+
+/* Map cursor states */
+.leaflet-container {
+  cursor: crosshair !important;
+}
+
+.leaflet-container.planning-mode {
+  cursor: crosshair !important;
+}
+
+.leaflet-container.editing-mode {
+  cursor: default !important;
+}
+
+.leaflet-container.ctrl-pressed {
+  cursor: copy !important;
+}
+
+/* Subtle route hover effects */
+.leaflet-interactive:hover {
+  stroke-width: 5 !important;
+  stroke-opacity: 0.9 !important;
+}
+
+/* Marker effects - removed jumping animations */
+.custom-draggable-marker {
+  transition: none !important;
+}
+
+.custom-draggable-marker:hover {
+  /* No transform or scale changes to prevent jumping */
+}
+
+/* Ghost marker for insertion preview */
+.ghost-marker {
+  opacity: 0.6 !important;
+  animation: pulse 1.5s ease-in-out infinite !important;
+}
+
+@keyframes pulse {
+  0% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.1); }
+  100% { opacity: 0.6; transform: scale(1); }
+}
+
+/* Route segment highlighting during Ctrl+hover - toned down */
+.route-segment-highlight {
+  stroke: #ff6b6b !important;
+  stroke-width: 6 !important;
+  stroke-opacity: 0.5 !important;
+  stroke-dasharray: none !important;
+  animation: none !important;
+}
+
+/* Visual indicators for planning state */
+.planning-indicator {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: rgba(34, 197, 94, 0.9);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  z-index: 1000;
+  pointer-events: none;
+  backdrop-filter: blur(5px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.planning-indicator.paused {
+  background: rgba(251, 146, 60, 0.9);
+}
+
+.planning-indicator.editing {
+  background: rgba(59, 130, 246, 0.9);
+}
+
+/* ========== MOBILE EXPERIENCE IMPROVEMENTS ========== */
+
+/* Mobile-friendly touch targets */
+@media (max-width: 768px) {
+  .custom-draggable-marker {
+    transform: scale(1.5) !important;
+  }
+  
+  .custom-draggable-marker:hover {
+    transform: scale(1.8) !important;
+  }
+  
+  /* Larger buttons on mobile */
+  .btn {
+    min-height: 44px !important;
+    padding: 12px 16px !important;
+    font-size: 1rem !important;
+  }
+  
+  /* Better spacing for controls */
+  .control-group {
+    gap: 12px !important;
+  }
+  
+  /* Mobile instructions */
+  .usage-instructions {
+    font-size: 0.95rem;
+  }
+  
+  .usage-instructions h4 {
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+  }
+  
+  /* Larger map controls */
+  .fullscreen-button,
+  .set-default-button,
+  .map-type-button-inline {
+    min-width: 44px !important;
+    min-height: 44px !important;
+  }
+  
+  /* Touch-friendly route stats */
+  .route-stats {
+    font-size: 1rem !important;
+  }
+  
+  .planning-indicator {
+    font-size: 1rem !important;
+    padding: 0.75rem 1.25rem !important;
+  }
+}
+
+/* Touch gesture feedback */
+.long-press-feedback {
+  position: absolute;
+  background: rgba(255, 107, 107, 0.8);
+  color: white;
+  padding: 0.5rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  pointer-events: none;
+  z-index: 1001;
+  animation: fadeInOut 1s ease-in-out;
+}
+
+@keyframes fadeInOut {
+  0% { opacity: 0; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(0.8); }
+}
+
+/* Mobile-specific cursor states */
+@media (max-width: 768px) {
+  .leaflet-container {
+    cursor: default !important;
+  }
+  
+  .leaflet-container.planning-mode {
+    cursor: default !important;
+  }
+}
+
+/* ========== PLANNING WORKFLOW ENHANCEMENTS ========== */
+
+
+/* Planning timer */
+.planning-timer {
+  background: rgba(59, 130, 246, 0.1);
+  color: #2563eb;
+  padding: 0.25rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  font-family: 'Courier New', monospace;
+}
+
+/* Enhanced route stats layout */
+.route-stats {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.route-stats > * {
+  white-space: nowrap;
+}
+
+/* Progress breadcrumbs */
+.planning-breadcrumb {
+  position: absolute;
+  top: 50px;
+  left: 10px;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.875rem;
+  z-index: 1000;
+  pointer-events: none;
+  backdrop-filter: blur(5px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.planning-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-right: 1rem;
+}
+
+.planning-step.completed {
+  color: #059669;
+}
+
+.planning-step.active {
+  color: #2563eb;
+  font-weight: 500;
+}
+
+.planning-step.pending {
+  color: #6b7280;
+  opacity: 0.6;
+}
+
+/* Auto-pause notification */
+.auto-pause-notification {
+  position: absolute;
+  top: 90px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(251, 146, 60, 0.9);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 16px;
+  font-size: 0.875rem;
+  z-index: 1001;
+  pointer-events: none;
+  animation: slideInFadeOut 3s ease-in-out forwards;
+}
+
+@keyframes slideInFadeOut {
+  0% { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+  20% { opacity: 1; transform: translateX(-50%) translateY(0); }
+  80% { opacity: 1; transform: translateX(-50%) translateY(0); }
+  100% { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+}
+
+/* ========== ROUTE VALIDATION & FEEDBACK ========== */
+
+/* Validation feedback container */
+.route-validation {
+  margin-top: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Warnings section */
+.validation-warnings {
+  background: rgba(239, 68, 68, 0.05);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 12px;
+  padding: 1rem;
+}
+
+.validation-warnings h4 {
+  margin: 0 0 0.75rem 0;
+  color: #dc2626;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.validation-warnings ul {
+  margin: 0;
+  padding-left: 1.25rem;
+  color: #7f1d1d;
+}
+
+.validation-warnings li {
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+/* Suggestions section */
+.validation-suggestions {
+  background: rgba(59, 130, 246, 0.05);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  border-radius: 12px;
+  padding: 1rem;
+}
+
+.validation-suggestions h4 {
+  margin: 0 0 0.75rem 0;
+  color: #2563eb;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.validation-suggestions ul {
+  margin: 0;
+  padding-left: 1.25rem;
+  color: #1e3a8a;
+}
+
+.validation-suggestions li {
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+/* Mobile responsiveness for validation */
+@media (max-width: 768px) {
+  .route-validation {
+    margin-top: 1rem;
+  }
+  
+  .validation-warnings,
+  .validation-suggestions {
+    padding: 0.875rem;
+  }
+  
+  .validation-warnings h4,
+  .validation-suggestions h4 {
+    font-size: 0.9rem;
+  }
+  
+  .validation-warnings li,
+  .validation-suggestions li {
+    font-size: 0.85rem;
+  }
+}
+
+/* Time/effort estimates */
+.route-estimates {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: rgba(34, 197, 94, 0.05);
+  border: 1px solid rgba(34, 197, 94, 0.2);
+  border-radius: 12px;
+}
+
+.route-estimates h4 {
+  margin: 0 0 0.75rem 0;
+  color: #059669;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.estimate-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 0.75rem;
+  font-size: 0.9rem;
+}
+
+.estimate-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.estimate-value {
+  font-weight: 600;
+  color: #047857;
+  font-size: 1.1rem;
+}
+
+.estimate-label {
+  color: #065f46;
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
 }
