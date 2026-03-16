@@ -758,14 +758,10 @@ function GpxTrimTool({ onStateChange }) {
                 </div>
               )}
               <div className="trim-stat-card">
-                <div className="trim-stat-label">{t('gpxTrim.stats.ascent')}</div>
-                <div className="trim-stat-value">
+                <div className="trim-stat-label">{t('gpxTrim.stats.elevation')}</div>
+                <div className="trim-stat-value trim-stat-value-row">
                   <span className="trim-stat-number trim-ascent">+{Math.round(selectedAscent)}m</span>
-                </div>
-              </div>
-              <div className="trim-stat-card">
-                <div className="trim-stat-label">{t('gpxTrim.stats.descent')}</div>
-                <div className="trim-stat-value">
+                  <span className="trim-stat-separator">/</span>
                   <span className="trim-stat-number trim-descent">-{Math.round(selectedDescent)}m</span>
                 </div>
               </div>

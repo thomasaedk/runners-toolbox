@@ -91,8 +91,7 @@
       "to": "Til",
       "distance": "Afstand",
       "duration": "Varighed",
-      "ascent": "Stigning",
-      "descent": "Fald",
+      "elevation": "Højde",
       "points": "Punkter",
       "point": "Punkt"
     },

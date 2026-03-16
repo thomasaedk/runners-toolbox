@@ -3034,8 +3034,8 @@ body:has(.route-planner-fullscreen) .app {
 
 .trim-stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 0.75rem;
 }
 
 .trim-stat-card {
@@ -3077,6 +3077,16 @@ body:has(.route-planner-fullscreen) .app {
   font-size: 1.05rem;
   font-weight: 700;
   color: #374151;
+}
+
+.trim-stat-value-row {
+  flex-direction: row;
+  gap: 0.25rem;
+}
+
+.trim-stat-separator {
+  color: #9ca3af;
+  font-size: 0.9rem;
 }
 
 .trim-ascent {
