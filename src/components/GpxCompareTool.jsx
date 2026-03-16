@@ -235,24 +235,20 @@ function GpxCompareTool({ onStateChange }) {
       {/* Example GPX Files */}
       <div className="example-files">
         <span className="example-files-label">{t('gpxCompare.tryWithExamples')}</span>
-        <a 
-          href="https://connect.garmin.com/modern/proxy/course-service/course/gpx/278051153" 
+        <a
+          href="/examples/aarhus-hm-2016.gpx"
           className="example-link"
-          target="_blank"
-          rel="noopener noreferrer"
-          download="aarhus-city-half-2024.gpx"
+          download="aarhus-hm-2016.gpx"
         >
-          Aarhus City Half 2024
+          Aarhus City Half 2016
         </a>
         <span className="example-separator">•</span>
-        <a 
-          href="https://connect.garmin.com/modern/proxy/course-service/course/gpx/356705289" 
+        <a
+          href="/examples/aarhus-hm-2019.gpx"
           className="example-link"
-          target="_blank"
-          rel="noopener noreferrer"
-          download="aarhus-city-half-2025.gpx"
+          download="aarhus-hm-2019.gpx"
         >
-          Aarhus City Half 2025
+          Aarhus City Half 2019
         </a>
       </div>
       
