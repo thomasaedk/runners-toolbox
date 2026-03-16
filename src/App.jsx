@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import './App.css'
 import GpxCompareTool from './components/GpxCompareTool'
-import PlaceholderTool from './components/PlaceholderTool'
+import GpxTrimTool from './components/GpxTrimTool'
 import RoutePlanner from './components/RoutePlanner'
 import LanguageSwitcher from './components/LanguageSwitcher'
 
@@ -10,6 +10,7 @@ function App() {
   const [activeTab, setActiveTab] = useState('tool2')
   const [gpxToolState, setGpxToolState] = useState({ hasUnsavedWork: false, loading: false })
   const [routePlannerState, setRoutePlannerState] = useState({ hasRoute: false, isPlanning: false })
+  const [trimToolState, setTrimToolState] = useState({ hasUnsavedWork: false })
   const { t } = useTranslation()
 
   // Update document title when language changes
@@ -29,6 +30,14 @@ function App() {
     // If switching away from Route Planner and there's a route, show warning
     if (activeTab === 'tool2' && newTab !== 'tool2' && routePlannerState.hasRoute) {
       const confirmed = window.confirm(t('routePlanner.confirmations.tabSwitchWarning'))
+      if (!confirmed) {
+        return
+      }
+    }
+
+    // If switching away from GPX Trim and there's unsaved work, show warning
+    if (activeTab === 'tool3' && newTab !== 'tool3' && trimToolState.hasUnsavedWork) {
+      const confirmed = window.confirm(t('gpxTrim.warnings.tabSwitch'))
       if (!confirmed) {
         return
       }
@@ -69,7 +78,7 @@ function App() {
       <main className="main-content">
         {activeTab === 'gpx-compare' && <GpxCompareTool onStateChange={setGpxToolState} />}
         {activeTab === 'tool2' && <RoutePlanner onStateChange={setRoutePlannerState} />}
-        {activeTab === 'tool3' && <PlaceholderTool name={t('tabs.tool3')} />}
+        {activeTab === 'tool3' && <GpxTrimTool onStateChange={setTrimToolState} />}
       </main>
     </div>
   )

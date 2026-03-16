@@ -4,7 +4,7 @@
   "tabs": {
     "gpxCompare": "GPX Compare",
     "tool2": "Route Planner",
-    "tool3": "Tool 3"
+    "tool3": "GPX Trim"
   },
   "gpxCompare": {
     "title": "GPX File Comparison",
@@ -74,11 +74,37 @@
     "differenceAreas": "Difference Areas",
     "clickToToggleDifferences": "Click to toggle difference areas"
   },
-  "placeholderTool": {
-    "comingSoon": "This tool is coming soon! It will provide additional functionality for runners.",
-    "underDevelopment": "🚧 Under Development",
-    "developmentMessage": "This feature is currently being developed and will be available soon.",
-    "checkBack": "Check back later for exciting new running tools!"
+  "gpxTrim": {
+    "title": "GPX Trim",
+    "description": "Upload a GPX file to trim your activity. Drag the handles on the elevation profile to select the portion you want to keep.",
+    "chooseFile": "Choose GPX File",
+    "dragDrop": "or drag and drop a .gpx file here",
+    "clearFile": "Clear File",
+    "points": "points",
+    "satellite": "Satellite",
+    "streetMap": "Street Map",
+    "dragHandles": "Drag the green and red handles to set the start and end of your trim",
+    "recenter": "Fit to view",
+    "exportGpx": "Save / Export GPX File",
+    "stats": {
+      "from": "From",
+      "to": "To",
+      "distance": "Distance",
+      "duration": "Duration",
+      "ascent": "Ascent",
+      "descent": "Descent",
+      "points": "Points",
+      "point": "Point"
+    },
+    "errors": {
+      "onlyGpxFiles": "Please select a .gpx file",
+      "fileTooLarge": "File is too large. Maximum file size is 10MB.",
+      "parseError": "Error parsing GPX file. Please ensure it's a valid GPX file.",
+      "tooFewPoints": "GPX file must contain at least 2 track points."
+    },
+    "warnings": {
+      "tabSwitch": "You have a GPX file loaded in the trim tool. Switching tabs will lose your progress. Continue?"
+    }
   },
   "language": {
     "switch": "Language",

@@ -4,7 +4,7 @@
   "tabs": {
     "gpxCompare": "GPX Sammenligning",
     "tool2": "Ruteplanlægger",
-    "tool3": "Værktøj 3"
+    "tool3": "GPX Trim"
   },
   "gpxCompare": {
     "title": "GPX Fil Sammenligning",
@@ -74,11 +74,37 @@
     "differenceAreas": "Forskelsområder",
     "clickToToggleDifferences": "Klik for at skifte forskelsområder"
   },
-  "placeholderTool": {
-    "comingSoon": "Dette værktøj kommer snart! Det vil give yderligere funktionalitet til løbere.",
-    "underDevelopment": "🚧 Under Udvikling",
-    "developmentMessage": "Denne funktion er i øjeblikket under udvikling og vil være tilgængelig snart.",
-    "checkBack": "Kom tilbage senere for spændende nye løbeværktøjer!"
+  "gpxTrim": {
+    "title": "GPX Trim",
+    "description": "Upload en GPX-fil for at trimme din aktivitet. Træk håndtagene på højdeprofilen for at vælge den del, du vil beholde.",
+    "chooseFile": "Vælg GPX Fil",
+    "dragDrop": "eller træk og slip en .gpx fil her",
+    "clearFile": "Ryd Fil",
+    "points": "punkter",
+    "satellite": "Satellit",
+    "streetMap": "Vejkort",
+    "dragHandles": "Træk de grønne og røde håndtag for at indstille start og slut på din trimning",
+    "recenter": "Tilpas visning",
+    "exportGpx": "Gem / Eksporter GPX Fil",
+    "stats": {
+      "from": "Fra",
+      "to": "Til",
+      "distance": "Afstand",
+      "duration": "Varighed",
+      "ascent": "Stigning",
+      "descent": "Fald",
+      "points": "Punkter",
+      "point": "Punkt"
+    },
+    "errors": {
+      "onlyGpxFiles": "Vælg venligst en .gpx fil",
+      "fileTooLarge": "Filen er for stor. Maksimal filstørrelse er 10MB.",
+      "parseError": "Fejl ved parsing af GPX-fil. Sørg for, at det er en gyldig GPX-fil.",
+      "tooFewPoints": "GPX-filen skal indeholde mindst 2 sporpunkter."
+    },
+    "warnings": {
+      "tabSwitch": "Du har en GPX-fil indlæst i trim-værktøjet. At skifte faner vil miste dit fremskridt. Fortsæt?"
+    }
   },
   "language": {
     "switch": "Sprog",
