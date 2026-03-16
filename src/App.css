@@ -1753,6 +1753,7 @@ body:has(.dual-map-container.fullscreen) .app {
   border-radius: 8px;
   padding: 1rem;
   margin-bottom: 1.5rem;
+  color: #374151;
 }
 
 /* Layout improvements for controls */
